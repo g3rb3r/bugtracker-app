@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
 import json
 import os
 BUGS_FILE = "bugs.json"
@@ -30,10 +31,13 @@ notebook.add(tab_done, text="✅ Zakończone")
 def show_bug_details(bug):
     detail_window = tk.Toplevel(root)
     detail_window.title(f"📋 Szczegóły - {bug['title']}")
-    detail_window.geometry("600x600")
+    detail_window.geometry("600x650")
 
-    text = tk.Text(detail_window, wrap='word', font=("Helvetica", 10))
-    text.pack(fill="both", expand=True, padx=10, pady=10)
+    text_frame = tk.Frame(detail_window)
+    text_frame.pack(fill="both", expand=True, padx=10, pady=(10, 0))
+
+    text = tk.Text(text_frame, wrap='word', font=("Helvetica", 10), height=30)
+    text.pack(fill="both", expand=True)
 
     full_text = (
         f"Tytuł: {bug['title']}\n\n"
@@ -43,15 +47,76 @@ def show_bug_details(bug):
         f"Faktyczny rezultat:\n{bug['actual']}\n\n"
         f"Ważność: {bug['severity']}\n\n"
         f"Dodatkowe notatki:\n{bug['notes']}\n\n"
-        f"Status: {bug['status']}"
     )
-
     text.insert(tk.END, full_text)
     text.config(state="disabled")
 
+    # === Zmiana statusu ===
+    status_frame = tk.Frame(detail_window)
+    status_frame.pack(pady=10)
+
+    tk.Label(status_frame, text="Status:", font=('Helvetica', 10, 'bold')).pack(side='left', padx=(0, 10))
+    status_var = tk.StringVar(value=bug['status'])
+    status_dropdown = ttk.Combobox(status_frame, textvariable=status_var, values=["W trakcie", "Zakończone"], state="readonly")
+    status_dropdown.pack(side='left')
+
+    # === Przycisk zapisu ===
+    def save_status_change():
+        try:
+            # Wczytaj wszystkie bugi
+            with open(BUGS_FILE, "r", encoding="utf-8") as f:
+                bugs = json.load(f)
+
+            # Znajdź i zaktualizuj
+            for b in bugs:
+                if b['title'] == bug['title'] and b['environment'] == bug['environment']:
+                    b['status'] = status_var.get()
+                    break
+
+            # Zapisz ponownie
+            with open(BUGS_FILE, "w", encoding="utf-8") as f:
+                json.dump(bugs, f, indent=2, ensure_ascii=False)
+
+            print(f"✅ Zmieniono status: {bug['title']} → {status_var.get()}")
+            detail_window.destroy()
+            load_bugs()
+
+        except Exception as e:
+            print("❌ Błąd przy aktualizacji statusu:", e)
+
+    tk.Button(detail_window, text="💾 Zapisz zmiany", command=save_status_change,
+              bg="#4CAF50", fg="white", padx=10, pady=5).pack(pady=10)
+    
+        # === Przycisk usuwania ===
+    def delete_bug():
+        if tk.messagebox.askyesno("Potwierdzenie", "Czy na pewno chcesz usunąć tego buga?"):
+            try:
+                with open(BUGS_FILE, "r", encoding="utf-8") as f:
+                    bugs = json.load(f)
+
+                # Usuń buga na podstawie tytułu i środowiska
+                bugs = [b for b in bugs if not (b['title'] == bug['title'] and b['environment'] == bug['environment'])]
+
+                with open(BUGS_FILE, "w", encoding="utf-8") as f:
+                    json.dump(bugs, f, indent=2, ensure_ascii=False)
+
+                print(f"🗑️ Usunięto buga: {bug['title']}")
+                detail_window.destroy()
+                load_bugs()
+
+            except Exception as e:
+                print("❌ Błąd przy usuwaniu buga:", e)
+
+    tk.Button(detail_window, text="🗑️ Usuń buga", command=delete_bug,
+              bg="#f44336", fg="white", padx=10, pady=5).pack(pady=(0, 10))
+
+
+
 def load_bugs():
-    for widget in tab_all.winfo_children():
-        widget.destroy()
+    # Wyczyść wszystkie zakładki
+    for tab in (tab_all, tab_in_progress, tab_done):
+        for widget in tab.winfo_children():
+            widget.destroy()
 
     if os.path.exists(BUGS_FILE):
         try:
@@ -59,11 +124,13 @@ def load_bugs():
                 bugs = json.load(f)
 
             if not bugs:
-                tk.Label(tab_all, text="Brak zgłoszonych bugów", fg="gray").pack(pady=20)
+                for tab in (tab_all, tab_in_progress, tab_done):
+                    tk.Label(tab, text="Brak zgłoszonych bugów", fg="gray").pack(pady=20)
                 return
 
-            for bug in bugs:
-                frame = tk.Frame(tab_all, bd=1, relief="solid", padx=10, pady=5)
+            # Funkcja pomocnicza do tworzenia karty buga
+            def create_bug_card(parent, bug):
+                frame = tk.Frame(parent, bd=1, relief="solid", padx=10, pady=5)
                 frame.pack(fill='x', padx=10, pady=5)
 
                 title = tk.Label(frame, text=f"🐞 {bug['title']}", font=('Helvetica', 10, 'bold'), anchor='w', cursor="hand2", wraplength=600, justify='left')
@@ -73,10 +140,21 @@ def load_bugs():
                 info = tk.Label(frame, text=f"Ważność: {bug['severity']} | Status: {bug['status']}", font=('Helvetica', 9), fg="gray", anchor='w')
                 info.pack(fill='x')
 
+            # Rozdziel bugi do odpowiednich zakładek
+            for bug in bugs:
+                create_bug_card(tab_all, bug)
+
+                if bug['status'] == "W trakcie":
+                    create_bug_card(tab_in_progress, bug)
+                elif bug['status'] == "Zakończone":
+                    create_bug_card(tab_done, bug)
+
         except Exception as e:
-            tk.Label(tab_all, text=f"Błąd przy wczytywaniu bugów: {e}", fg="red").pack(pady=20)
+            for tab in (tab_all, tab_in_progress, tab_done):
+                tk.Label(tab, text=f"Błąd przy wczytywaniu bugów: {e}", fg="red").pack(pady=20)
     else:
-        tk.Label(tab_all, text="Brak pliku z bugami", fg="gray").pack(pady=20)
+        for tab in (tab_all, tab_in_progress, tab_done):
+            tk.Label(tab, text="Brak pliku z bugami", fg="gray").pack(pady=20)
 
 
 # ====== Przycisk dodawania nowego buga ======
