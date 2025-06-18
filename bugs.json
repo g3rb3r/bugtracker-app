@@ -7,6 +7,6 @@
     "actual": "Several rock meshes appear to be floating above the terrain surface, suggesting incorrect placement or lack of collision alignment.",
     "severity": "Kosmetyczny",
     "notes": "Rocks at lower elevations appear correctly placed. However, when viewed from above (near the mountain ridge), several rocks become visibly detached from the surface and exhibit clipping or floating behavior.\nGraphic settings: Ultra preset, no mods installed",
-    "status": "W trakcie"
+    "status": "Zakończone"
   }
 ]
