@@ -31,37 +31,139 @@ notebook.add(tab_done, text="✅ Zakończone")
 def show_bug_details(bug):
     detail_window = tk.Toplevel(root)
     detail_window.title(f"📋 Szczegóły - {bug['title']}")
-    detail_window.geometry("600x650")
+    detail_window.geometry("700x800")
 
-    text_frame = tk.Frame(detail_window)
-    text_frame.pack(fill="both", expand=True, padx=10, pady=(10, 0))
+    # Tworzymy canvas z przewijaniem
+    canvas = tk.Canvas(detail_window)
+    scrollbar = tk.Scrollbar(detail_window, orient="vertical", command=canvas.yview)
+    scrollable_frame = tk.Frame(canvas)
 
-    text = tk.Text(text_frame, wrap='word', font=("Helvetica", 10), height=30)
-    text.pack(fill="both", expand=True)
-
-    full_text = (
-        f"Tytuł: {bug['title']}\n\n"
-        f"Środowisko:\n{bug['environment']}\n\n"
-        f"Kroki do odtworzenia:\n{bug['steps']}\n\n"
-        f"Oczekiwany rezultat:\n{bug['expected']}\n\n"
-        f"Faktyczny rezultat:\n{bug['actual']}\n\n"
-        f"Ważność: {bug['severity']}\n\n"
-        f"Dodatkowe notatki:\n{bug['notes']}\n\n"
+    scrollable_frame.bind(
+        "<Configure>",
+        lambda e: canvas.configure(
+            scrollregion=canvas.bbox("all")
+        )
     )
-    text.insert(tk.END, full_text)
-    text.config(state="disabled")
+
+    canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+    canvas.configure(yscrollcommand=scrollbar.set)
+
+    canvas.pack(side="left", fill="both", expand=True)
+    scrollbar.pack(side="right", fill="y")
+
+    # === Informacje tylko do odczytu ===
+    read_only_frame = tk.Frame(scrollable_frame)
+    read_only_frame.pack(fill='x', padx=10, pady=5)
+
+    tk.Label(read_only_frame, text=f"Tytuł: {bug['title']}", font=('Helvetica', 12, 'bold')).pack(anchor='w')
+    tk.Label(read_only_frame, text=f"Ważność: {bug['severity']}", font=('Helvetica', 10)).pack(anchor='w')
+    
+    env_label = tk.Label(read_only_frame, text=f"Środowisko:\n{bug['environment']}", font=('Helvetica', 10), justify='left')
+    env_label.pack(anchor='w', pady=(5, 0))
+
+    # === Pola edytowalne (domyślnie tylko do odczytu) ===
+    editable_frame = tk.Frame(scrollable_frame)
+    editable_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+    # Kroki do odtworzenia
+    tk.Label(editable_frame, text="Kroki do odtworzenia:", font=('Helvetica', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+    steps_text = tk.Text(editable_frame, height=6, width=70, wrap='word', state='disabled')
+    steps_text.pack(fill='x', pady=(0, 10))
+    steps_text.config(state='normal')
+    steps_text.insert(tk.END, bug['steps'])
+    steps_text.config(state='disabled')
+
+    # Oczekiwany rezultat
+    tk.Label(editable_frame, text="Oczekiwany rezultat:", font=('Helvetica', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+    expected_text = tk.Text(editable_frame, height=4, width=70, wrap='word', state='disabled')
+    expected_text.pack(fill='x', pady=(0, 10))
+    expected_text.config(state='normal')
+    expected_text.insert(tk.END, bug['expected'])
+    expected_text.config(state='disabled')
+
+    # Faktyczny rezultat
+    tk.Label(editable_frame, text="Faktyczny rezultat:", font=('Helvetica', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+    actual_text = tk.Text(editable_frame, height=6, width=70, wrap='word', state='disabled')
+    actual_text.pack(fill='x', pady=(0, 10))
+    actual_text.config(state='normal')
+    actual_text.insert(tk.END, bug['actual'])
+    actual_text.config(state='disabled')
+
+    # Notatki
+    tk.Label(editable_frame, text="Notatki / Dodatkowe informacje:", font=('Helvetica', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+    notes_text = tk.Text(editable_frame, height=6, width=70, wrap='word', state='disabled')
+    notes_text.pack(fill='x', pady=(0, 10))
+    notes_text.config(state='normal')
+    notes_text.insert(tk.END, bug['notes'])
+    notes_text.config(state='disabled')
 
     # === Zmiana statusu ===
-    status_frame = tk.Frame(detail_window)
+    status_frame = tk.Frame(scrollable_frame)
     status_frame.pack(pady=10)
 
     tk.Label(status_frame, text="Status:", font=('Helvetica', 10, 'bold')).pack(side='left', padx=(0, 10))
     status_var = tk.StringVar(value=bug['status'])
-    status_dropdown = ttk.Combobox(status_frame, textvariable=status_var, values=["W trakcie", "Zakończone"], state="readonly")
+    status_dropdown = ttk.Combobox(status_frame, textvariable=status_var, values=["W trakcie", "Zakończone"], state="disabled")
     status_dropdown.pack(side='left')
 
-    # === Przycisk zapisu ===
-    def save_status_change():
+    # === Przyciski ===
+    buttons_frame = tk.Frame(scrollable_frame)
+    buttons_frame.pack(pady=10)
+
+    edit_mode = False
+
+    def toggle_edit_mode():
+        nonlocal edit_mode
+        if not edit_mode:
+            # Włącz tryb edycji
+            steps_text.config(state='normal')
+            expected_text.config(state='normal')
+            actual_text.config(state='normal')
+            notes_text.config(state='normal')
+            status_dropdown.config(state="readonly")
+            edit_button.config(text="❌ Anuluj edycję", bg="#f44336")
+            edit_mode = True
+            
+            # Pokaż przycisk zapisu
+            save_button.pack(side='left', padx=5)
+        else:
+            # Wyłącz tryb edycji
+            steps_text.config(state='disabled')
+            expected_text.config(state='disabled')
+            actual_text.config(state='disabled')
+            notes_text.config(state='disabled')
+            status_dropdown.config(state="disabled")
+            edit_button.config(text="✏️ Edytuj raport", bg="#2196F3")
+            edit_mode = False
+            
+            # Ukryj przycisk zapisu
+            save_button.pack_forget()
+            
+            # Przywróć oryginalne wartości
+            steps_text.config(state='normal')
+            steps_text.delete("1.0", tk.END)
+            steps_text.insert(tk.END, bug['steps'])
+            steps_text.config(state='disabled')
+            
+            expected_text.config(state='normal')
+            expected_text.delete("1.0", tk.END)
+            expected_text.insert(tk.END, bug['expected'])
+            expected_text.config(state='disabled')
+            
+            actual_text.config(state='normal')
+            actual_text.delete("1.0", tk.END)
+            actual_text.insert(tk.END, bug['actual'])
+            actual_text.config(state='disabled')
+            
+            notes_text.config(state='normal')
+            notes_text.delete("1.0", tk.END)
+            notes_text.insert(tk.END, bug['notes'])
+            notes_text.config(state='disabled')
+            
+            # Przywróć oryginalny status
+            status_var.set(bug['status'])
+
+    def save_changes():
         try:
             # Wczytaj wszystkie bugi
             with open(BUGS_FILE, "r", encoding="utf-8") as f:
@@ -71,25 +173,35 @@ def show_bug_details(bug):
             for b in bugs:
                 if b['title'] == bug['title'] and b['environment'] == bug['environment']:
                     b['status'] = status_var.get()
+                    b['steps'] = steps_text.get("1.0", tk.END).strip()
+                    b['expected'] = expected_text.get("1.0", tk.END).strip()
+                    b['actual'] = actual_text.get("1.0", tk.END).strip()
+                    b['notes'] = notes_text.get("1.0", tk.END).strip()
                     break
 
             # Zapisz ponownie
             with open(BUGS_FILE, "w", encoding="utf-8") as f:
                 json.dump(bugs, f, indent=2, ensure_ascii=False)
 
-            print(f"✅ Zmieniono status: {bug['title']} → {status_var.get()}")
+            print(f"✅ Zapisano zmiany: {bug['title']}")
             detail_window.destroy()
             load_bugs()
 
         except Exception as e:
-            print("❌ Błąd przy aktualizacji statusu:", e)
+            print("❌ Błąd przy zapisie zmian:", e)
 
-    tk.Button(detail_window, text="💾 Zapisz zmiany", command=save_status_change,
-              bg="#4CAF50", fg="white", padx=10, pady=5).pack(pady=10)
+    # Przycisk edycji
+    edit_button = tk.Button(buttons_frame, text="✏️ Edytuj raport", command=toggle_edit_mode,
+                           bg="#2196F3", fg="white", padx=10, pady=5)
+    edit_button.pack(side='left', padx=5)
+
+    # Przycisk zapisu (początkowo ukryty)
+    save_button = tk.Button(buttons_frame, text="💾 Zapisz zmiany", command=save_changes,
+                           bg="#4CAF50", fg="white", padx=10, pady=5)
     
-        # === Przycisk usuwania ===
+    # === Przycisk usuwania ===
     def delete_bug():
-        if tk.messagebox.askyesno("Potwierdzenie", "Czy na pewno chcesz usunąć tego buga?"):
+        if messagebox.askyesno("Potwierdzenie", "Czy na pewno chcesz usunąć tego buga?"):
             try:
                 with open(BUGS_FILE, "r", encoding="utf-8") as f:
                     bugs = json.load(f)
@@ -107,8 +219,8 @@ def show_bug_details(bug):
             except Exception as e:
                 print("❌ Błąd przy usuwaniu buga:", e)
 
-    tk.Button(detail_window, text="🗑️ Usuń buga", command=delete_bug,
-              bg="#f44336", fg="white", padx=10, pady=5).pack(pady=(0, 10))
+    tk.Button(buttons_frame, text="🗑️ Usuń buga", command=delete_bug,
+              bg="#f44336", fg="white", padx=10, pady=5).pack(side='left', padx=5)
 
 
 
