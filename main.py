@@ -51,47 +51,54 @@ def show_bug_details(bug):
     canvas.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
 
+    # Konfiguracja canvas aby rozszerzał się na całą szerokość
+    def configure_canvas(event):
+        canvas.itemconfig(canvas_window, width=event.width)
+    
+    canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+    canvas.bind('<Configure>', configure_canvas)
+
     # === Informacje tylko do odczytu ===
     read_only_frame = tk.Frame(scrollable_frame)
     read_only_frame.pack(fill='x', padx=10, pady=5)
 
-    tk.Label(read_only_frame, text=f"Tytuł: {bug['title']}", font=('Helvetica', 12, 'bold')).pack(anchor='w')
-    tk.Label(read_only_frame, text=f"Ważność: {bug['severity']}", font=('Helvetica', 10)).pack(anchor='w')
+    tk.Label(read_only_frame, text=f"Tytuł: {bug['title']}", font=('Helvetica', 12, 'bold')).pack(anchor='w', fill='x')
+    tk.Label(read_only_frame, text=f"Ważność: {bug['severity']}", font=('Helvetica', 10)).pack(anchor='w', fill='x')
     
-    env_label = tk.Label(read_only_frame, text=f"Środowisko:\n{bug['environment']}", font=('Helvetica', 10), justify='left')
-    env_label.pack(anchor='w', pady=(5, 0))
+    env_label = tk.Label(read_only_frame, text=f"Środowisko:\n{bug['environment']}", font=('Helvetica', 10), justify='left', anchor='w')
+    env_label.pack(anchor='w', fill='x', pady=(5, 0))
 
     # === Pola edytowalne (domyślnie tylko do odczytu) ===
     editable_frame = tk.Frame(scrollable_frame)
     editable_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
     # Kroki do odtworzenia
-    tk.Label(editable_frame, text="Kroki do odtworzenia:", font=('Helvetica', 10, 'bold')).pack(anchor='w', pady=(10, 5))
-    steps_text = tk.Text(editable_frame, height=6, width=70, wrap='word', state='disabled')
+    tk.Label(editable_frame, text="Kroki do odtworzenia:", font=('Helvetica', 10, 'bold')).pack(anchor='w', pady=(10, 5), fill='x')
+    steps_text = tk.Text(editable_frame, height=6, wrap='word', state='disabled')
     steps_text.pack(fill='x', pady=(0, 10))
     steps_text.config(state='normal')
     steps_text.insert(tk.END, bug['steps'])
     steps_text.config(state='disabled')
 
     # Oczekiwany rezultat
-    tk.Label(editable_frame, text="Oczekiwany rezultat:", font=('Helvetica', 10, 'bold')).pack(anchor='w', pady=(10, 5))
-    expected_text = tk.Text(editable_frame, height=4, width=70, wrap='word', state='disabled')
+    tk.Label(editable_frame, text="Oczekiwany rezultat:", font=('Helvetica', 10, 'bold')).pack(anchor='w', pady=(10, 5), fill='x')
+    expected_text = tk.Text(editable_frame, height=4, wrap='word', state='disabled')
     expected_text.pack(fill='x', pady=(0, 10))
     expected_text.config(state='normal')
     expected_text.insert(tk.END, bug['expected'])
     expected_text.config(state='disabled')
 
     # Faktyczny rezultat
-    tk.Label(editable_frame, text="Faktyczny rezultat:", font=('Helvetica', 10, 'bold')).pack(anchor='w', pady=(10, 5))
-    actual_text = tk.Text(editable_frame, height=6, width=70, wrap='word', state='disabled')
+    tk.Label(editable_frame, text="Faktyczny rezultat:", font=('Helvetica', 10, 'bold')).pack(anchor='w', pady=(10, 5), fill='x')
+    actual_text = tk.Text(editable_frame, height=6, wrap='word', state='disabled')
     actual_text.pack(fill='x', pady=(0, 10))
     actual_text.config(state='normal')
     actual_text.insert(tk.END, bug['actual'])
     actual_text.config(state='disabled')
 
     # Notatki
-    tk.Label(editable_frame, text="Notatki / Dodatkowe informacje:", font=('Helvetica', 10, 'bold')).pack(anchor='w', pady=(10, 5))
-    notes_text = tk.Text(editable_frame, height=6, width=70, wrap='word', state='disabled')
+    tk.Label(editable_frame, text="Notatki / Dodatkowe informacje:", font=('Helvetica', 10, 'bold')).pack(anchor='w', pady=(10, 5), fill='x')
+    notes_text = tk.Text(editable_frame, height=6, wrap='word', state='disabled')
     notes_text.pack(fill='x', pady=(0, 10))
     notes_text.config(state='normal')
     notes_text.insert(tk.END, bug['notes'])
@@ -99,7 +106,7 @@ def show_bug_details(bug):
 
     # === Zmiana statusu ===
     status_frame = tk.Frame(scrollable_frame)
-    status_frame.pack(pady=10)
+    status_frame.pack(pady=10, fill='x', padx=10)
 
     tk.Label(status_frame, text="Status:", font=('Helvetica', 10, 'bold')).pack(side='left', padx=(0, 10))
     status_var = tk.StringVar(value=bug['status'])
@@ -108,7 +115,11 @@ def show_bug_details(bug):
 
     # === Przyciski ===
     buttons_frame = tk.Frame(scrollable_frame)
-    buttons_frame.pack(pady=10)
+    buttons_frame.pack(pady=10, fill='x', padx=10)
+    
+    # Kontener do wyśrodkowania przycisków
+    buttons_center_frame = tk.Frame(buttons_frame)
+    buttons_center_frame.pack(expand=True)
 
     edit_mode = False
 
@@ -191,12 +202,12 @@ def show_bug_details(bug):
             print("❌ Błąd przy zapisie zmian:", e)
 
     # Przycisk edycji
-    edit_button = tk.Button(buttons_frame, text="✏️ Edytuj raport", command=toggle_edit_mode,
+    edit_button = tk.Button(buttons_center_frame, text="✏️ Edytuj raport", command=toggle_edit_mode,
                            bg="#2196F3", fg="white", padx=10, pady=5)
     edit_button.pack(side='left', padx=5)
 
     # Przycisk zapisu (początkowo ukryty)
-    save_button = tk.Button(buttons_frame, text="💾 Zapisz zmiany", command=save_changes,
+    save_button = tk.Button(buttons_center_frame, text="💾 Zapisz zmiany", command=save_changes,
                            bg="#4CAF50", fg="white", padx=10, pady=5)
     
     # === Przycisk usuwania ===
@@ -219,8 +230,12 @@ def show_bug_details(bug):
             except Exception as e:
                 print("❌ Błąd przy usuwaniu buga:", e)
 
-    tk.Button(buttons_frame, text="🗑️ Usuń buga", command=delete_bug,
+    tk.Button(buttons_center_frame, text="🗑️ Usuń buga", command=delete_bug,
               bg="#f44336", fg="white", padx=10, pady=5).pack(side='left', padx=5)
+
+    # === Przycisk zamknięcia ===
+    tk.Button(buttons_center_frame, text="❌ Zamknij podgląd", command=detail_window.destroy,
+              bg="#9E9E9E", fg="white", padx=10, pady=5).pack(side='left', padx=5)
 
 
 
