@@ -1,0 +1,12 @@
+[
+  {
+    "title": "Floating Rocks Near Temple of the Ancestor Monks (Jerall Mountains)",
+    "environment": "Wersja gry: v0.411.140.0\nPlatforma: PC / Windows 11 / Steam\nUrządzenie: NVIDIA GTX 3060, 32GB RAM\nPołączenie internetowe: Stable WiFi",
+    "steps": "1. launch game \n2. travel to oblivion gates near frostcrag spire\n3. head towards temple of the ancestor monks through the jerall mountains\n4. climb up toward higher mountains peaks\n5. Observe rock placements along the steep terrain",
+    "expected": "Rocks should appear naturally integrated into the terrain, with no visible separation or floating.",
+    "actual": "Several rock meshes appear to be floating above the terrain surface, suggesting incorrect placement or lack of collision alignment.",
+    "severity": "Kosmetyczny",
+    "notes": "Rocks at lower elevations appear correctly placed. However, when viewed from above (near the mountain ridge), several rocks become visibly detached from the surface and exhibit clipping or floating behavior.\nGraphic settings: Ultra preset, no mods installed",
+    "status": "W trakcie"
+  }
+]

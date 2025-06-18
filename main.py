@@ -60,7 +60,7 @@ def open_bug_form():
         label = tk.Label(scrollable_frame, text=label_text)
         label.pack(anchor='w', padx=10, pady=(10, 0))
         if is_multiline:
-            entry = tk.Text(scrollable_frame, height=5, width=60)
+            entry = tk.Text(scrollable_frame, height=5, width=60, wrap='word')
         else:
             entry = tk.Entry(scrollable_frame, width=60)
         entry.pack(padx=10)
@@ -90,33 +90,46 @@ def open_bug_form():
     fields['notes'] = create_field("7. Notatki / Dodatkowe informacje:", is_multiline=True)
 
     def save_bug():
-        bug_data = {
-            "title": fields['title'].get(),
-            "environment": fields['environment'].get("1.0", tk.END).strip(),
-            "steps": fields['steps'].get("1.0", tk.END).strip(),
-            "expected": fields['expected'].get("1.0", tk.END).strip(),
-            "actual": fields['actual'].get("1.0", tk.END).strip(),
-            "severity": fields['severity'].get(),
-            "notes": fields['notes'].get("1.0", tk.END).strip(),
-            "status": "W trakcie"  # domyślnie nowy bug ma status "w trakcie"
-        }
+        try:
+            bug_data = {
+                "title": fields['title'].get(),
+                "environment": (
+                    f"Wersja gry: {fields['game_version'].get()}\n"
+                    f"Platforma: {fields['platform'].get()}\n"
+                    f"Urządzenie: {fields['device'].get()}\n"
+                    f"Połączenie internetowe: {fields['internet'].get()}"
+                ),
+                "steps": fields['steps'].get("1.0", tk.END).strip(),
+                "expected": fields['expected'].get("1.0", tk.END).strip(),
+                "actual": fields['actual'].get("1.0", tk.END).strip(),
+                "severity": fields['severity'].get(),
+                "notes": fields['notes'].get("1.0", tk.END).strip(),
+                "status": "W trakcie"
+            }
 
-        # Wczytanie istniejących bugów (jeśli są)
-        if os.path.exists(BUGS_FILE):
-            with open(BUGS_FILE, "r", encoding="utf-8") as f:
-                bugs = json.load(f)
-        else:
-            bugs = []
+            # Wczytaj istniejące bugi (jeśli plik istnieje)
+            if os.path.exists(BUGS_FILE):
+                with open(BUGS_FILE, "r", encoding="utf-8") as f:
+                    bugs = json.load(f)
+            else:
+                bugs = []
 
-        # Dodanie nowego buga
-        bugs.append(bug_data)
+            # Dodaj nowy bug
+            bugs.append(bug_data)
 
-        # Zapis do pliku
-        with open(BUGS_FILE, "w", encoding="utf-8") as f:
-            json.dump(bugs, f, indent=2, ensure_ascii=False)
+            # Zapisz do pliku
+            with open(BUGS_FILE, "w", encoding="utf-8") as f:
+                json.dump(bugs, f, indent=2, ensure_ascii=False)
 
-        print("Nowy bug zapisany:", bug_data)
-        top.destroy()
+            # Informacja o sukcesie
+            print("✅ Nowy bug zapisany:", bug_data)
+
+            # Zamknij formularz
+            top.destroy()
+
+        except Exception as e:
+            print("❌ Błąd przy zapisie buga:", e)
+
 
 
     tk.Button(scrollable_frame, text="💾 Zapisz bug", command=save_bug,
