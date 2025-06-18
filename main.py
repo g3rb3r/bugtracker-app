@@ -7,6 +7,52 @@ import json
 import os
 import shutil
 from datetime import datetime
+
+# ====== NOWOCZESNY MOTYW CIEMNY (VS Code/OpenAI/Cursor style) ======
+# Kolory główne
+COLORS = {
+    # Tło główne
+    'bg_primary': '#1e1e1e',      # Ciemne tło główne
+    'bg_secondary': '#252526',    # Tło sekcji
+    'bg_tertiary': '#2d2d30',     # Tło elementów
+    
+    # Akcenty
+    'accent_blue': '#007acc',     # Niebieski akcent (VS Code)
+    'accent_green': '#4ec9b0',    # Zielony akcent
+    'accent_orange': '#ce9178',   # Pomarańczowy akcent
+    'accent_red': '#f44747',      # Czerwony akcent
+    
+    # Tekst
+    'text_primary': '#cccccc',    # Główny tekst
+    'text_secondary': '#969696',  # Drugorzędny tekst
+    'text_muted': '#6a6a6a',      # Stłumiony tekst
+    
+    # Ramki i obramowania
+    'border': '#3e3e42',          # Ramki
+    'border_hover': '#4e4e52',    # Ramki przy hover
+    
+    # Status
+    'success': '#4ec9b0',         # Sukces
+    'warning': '#ce9178',         # Ostrzeżenie
+    'error': '#f44747',           # Błąd
+    'info': '#007acc',            # Informacja
+}
+
+# Style dla różnych elementów
+STYLES = {
+    'font_heading': ('Segoe UI', 16, 'bold'),
+    'font_subheading': ('Segoe UI', 12, 'bold'),
+    'font_body': ('Segoe UI', 10),
+    'font_small': ('Segoe UI', 9),
+    
+    'padding_small': 5,
+    'padding_medium': 10,
+    'padding_large': 15,
+    
+    'border_radius': 6,
+    'border_width': 1,
+}
+
 BUGS_FILE = "bugs.json"
 SCREENSHOTS_DIR = "screenshots"
 
@@ -93,25 +139,75 @@ def show_image_preview(image_path):
         print(f"❌ Błąd przy wyświetlaniu podglądu: {e}")
         messagebox.showerror("Błąd", f"Nie można wyświetlić obrazu: {e}")
 
+def create_modern_button(parent, text, command, button_type='primary'):
+    """Tworzy nowoczesny przycisk w stylu VS Code"""
+    colors = {
+        'primary': {'bg': COLORS['accent_blue'], 'active_bg': COLORS['accent_green']},
+        'success': {'bg': COLORS['success'], 'active_bg': COLORS['accent_green']},
+        'danger': {'bg': COLORS['error'], 'active_bg': COLORS['accent_red']},
+        'warning': {'bg': COLORS['warning'], 'active_bg': COLORS['accent_orange']},
+        'secondary': {'bg': COLORS['bg_tertiary'], 'active_bg': COLORS['border_hover']}
+    }
+    
+    btn_colors = colors.get(button_type, colors['primary'])
+    
+    return tk.Button(parent, text=text, command=command,
+                    bg=btn_colors['bg'], fg=COLORS['text_primary'],
+                    font=STYLES['font_body'], padx=STYLES['padding_medium'],
+                    pady=STYLES['padding_small'], relief='flat',
+                    activebackground=btn_colors['active_bg'],
+                    activeforeground=COLORS['text_primary'],
+                    cursor='hand2')
+
 # Konfiguracja głównego okna
 root = tk.Tk()
-root.title("Bug Tracker")
-root.geometry("800x600")
+root.title("Bug Tracker - Panel QA")
+root.geometry("1000x700")
+root.configure(bg=COLORS['bg_primary'])
+
+# Ustaw minimalny rozmiar okna
+root.minsize(800, 600)
 
 # ====== Nagłówek ======
-header = tk.Label(root, text="🎮 Bug Tracker - Panel QA", font=("Helvetica", 16, "bold"))
-header.pack(pady=10)
+header_frame = tk.Frame(root, bg=COLORS['bg_primary'])
+header_frame.pack(fill='x', padx=STYLES['padding_large'], pady=STYLES['padding_medium'])
+
+header = tk.Label(header_frame, text="🐛 Bug Tracker", font=STYLES['font_heading'], 
+                 bg=COLORS['bg_primary'], fg=COLORS['text_primary'])
+header.pack(side='left')
+
+subtitle = tk.Label(header_frame, text="Panel QA - Zarządzanie błędami", font=STYLES['font_body'], 
+                   bg=COLORS['bg_primary'], fg=COLORS['text_secondary'])
+subtitle.pack(side='left', padx=(STYLES['padding_medium'], 0), pady=(5, 0))
 
 # ====== Zakładki (filtry statusów) ======
-notebook = ttk.Notebook(root)
-notebook.pack(expand=1, fill='both', padx=10, pady=5)
+notebook_frame = tk.Frame(root, bg=COLORS['bg_primary'])
+notebook_frame.pack(fill='both', expand=True, padx=STYLES['padding_large'], pady=STYLES['padding_small'])
+
+# Konfiguracja stylu zakładek
+style = ttk.Style()
+style.theme_use('clam')  # Użyj motywu clam dla lepszej kontroli
+
+# Styl dla zakładek
+style.configure('Custom.TNotebook', background=COLORS['bg_primary'], borderwidth=0)
+style.configure('Custom.TNotebook.Tab', 
+                background=COLORS['bg_secondary'],
+                foreground=COLORS['text_secondary'],
+                padding=[STYLES['padding_medium'], STYLES['padding_small']],
+                borderwidth=0)
+style.map('Custom.TNotebook.Tab',
+          background=[('selected', COLORS['accent_blue']), ('active', COLORS['bg_tertiary'])],
+          foreground=[('selected', COLORS['text_primary']), ('active', COLORS['text_primary'])])
+
+notebook = ttk.Notebook(notebook_frame, style='Custom.TNotebook')
+notebook.pack(expand=1, fill='both')
 
 # Tworzymy trzy zakładki
-tab_all = tk.Frame(notebook)
-tab_in_progress = tk.Frame(notebook)
-tab_done = tk.Frame(notebook)
+tab_all = tk.Frame(notebook, bg=COLORS['bg_secondary'])
+tab_in_progress = tk.Frame(notebook, bg=COLORS['bg_secondary'])
+tab_done = tk.Frame(notebook, bg=COLORS['bg_secondary'])
 
-notebook.add(tab_all, text="🗂️ Wszystkie")
+notebook.add(tab_all, text="📋 Wszystkie")
 notebook.add(tab_in_progress, text="🛠️ W trakcie")
 notebook.add(tab_done, text="✅ Zakończone")
 
@@ -120,11 +216,12 @@ def show_bug_details(bug):
     detail_window = tk.Toplevel(root)
     detail_window.title(f"📋 Szczegóły - {bug['title']}")
     detail_window.geometry("700x800")
+    detail_window.configure(bg=COLORS['bg_primary'])
 
     # Tworzymy canvas z przewijaniem
-    canvas = tk.Canvas(detail_window)
+    canvas = tk.Canvas(detail_window, bg=COLORS['bg_primary'], highlightthickness=0)
     scrollbar = tk.Scrollbar(detail_window, orient="vertical", command=canvas.yview)
-    scrollable_frame = tk.Frame(canvas)
+    scrollable_frame = tk.Frame(canvas, bg=COLORS['bg_primary'])
 
     scrollable_frame.bind(
         "<Configure>",
@@ -147,61 +244,82 @@ def show_bug_details(bug):
     canvas.bind('<Configure>', configure_canvas)
 
     # === Informacje tylko do odczytu ===
-    read_only_frame = tk.Frame(scrollable_frame)
-    read_only_frame.pack(fill='x', padx=10, pady=5)
+    read_only_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
+    read_only_frame.pack(fill='x', padx=STYLES['padding_large'], pady=STYLES['padding_medium'])
 
-    tk.Label(read_only_frame, text=f"Tytuł: {bug['title']}", font=('Helvetica', 12, 'bold')).pack(anchor='w', fill='x')
-    tk.Label(read_only_frame, text=f"Ważność: {bug['severity']}", font=('Helvetica', 10)).pack(anchor='w', fill='x')
+    tk.Label(read_only_frame, text=f"Tytuł: {bug['title']}", font=STYLES['font_subheading'], 
+            bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(anchor='w', fill='x')
+    tk.Label(read_only_frame, text=f"Ważność: {bug['severity']}", font=STYLES['font_body'], 
+            bg=COLORS['bg_primary'], fg=COLORS['text_secondary']).pack(anchor='w', fill='x')
     
-    env_label = tk.Label(read_only_frame, text=f"Środowisko:\n{bug['environment']}", font=('Helvetica', 10), justify='left', anchor='w')
-    env_label.pack(anchor='w', fill='x', pady=(5, 0))
+    env_label = tk.Label(read_only_frame, text=f"Środowisko:\n{bug['environment']}", 
+                        font=STYLES['font_body'], justify='left', anchor='w',
+                        bg=COLORS['bg_primary'], fg=COLORS['text_primary'])
+    env_label.pack(anchor='w', fill='x', pady=(STYLES['padding_small'], 0))
 
     # === Pola edytowalne (domyślnie tylko do odczytu) ===
-    editable_frame = tk.Frame(scrollable_frame)
-    editable_frame.pack(fill='both', expand=True, padx=10, pady=10)
+    editable_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
+    editable_frame.pack(fill='both', expand=True, padx=STYLES['padding_large'], pady=STYLES['padding_medium'])
 
     # Kroki do odtworzenia
-    tk.Label(editable_frame, text="Kroki do odtworzenia:", font=('Helvetica', 10, 'bold')).pack(anchor='w', pady=(10, 5), fill='x')
-    steps_text = tk.Text(editable_frame, height=6, wrap='word', state='disabled')
-    steps_text.pack(fill='x', pady=(0, 10))
+    tk.Label(editable_frame, text="Kroki do odtworzenia:", font=STYLES['font_subheading'], 
+            bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(anchor='w', pady=(STYLES['padding_medium'], STYLES['padding_small']), fill='x')
+    steps_text = tk.Text(editable_frame, height=6, wrap='word', state='disabled',
+                        bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'], 
+                        insertbackground=COLORS['text_primary'], relief='flat',
+                        font=STYLES['font_body'])
+    steps_text.pack(fill='x', pady=(0, STYLES['padding_medium']))
     steps_text.config(state='normal')
     steps_text.insert(tk.END, bug['steps'])
     steps_text.config(state='disabled')
 
     # Oczekiwany rezultat
-    tk.Label(editable_frame, text="Oczekiwany rezultat:", font=('Helvetica', 10, 'bold')).pack(anchor='w', pady=(10, 5), fill='x')
-    expected_text = tk.Text(editable_frame, height=4, wrap='word', state='disabled')
-    expected_text.pack(fill='x', pady=(0, 10))
+    tk.Label(editable_frame, text="Oczekiwany rezultat:", font=STYLES['font_subheading'], 
+            bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(anchor='w', pady=(STYLES['padding_medium'], STYLES['padding_small']), fill='x')
+    expected_text = tk.Text(editable_frame, height=4, wrap='word', state='disabled',
+                           bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'], 
+                           insertbackground=COLORS['text_primary'], relief='flat',
+                           font=STYLES['font_body'])
+    expected_text.pack(fill='x', pady=(0, STYLES['padding_medium']))
     expected_text.config(state='normal')
     expected_text.insert(tk.END, bug['expected'])
     expected_text.config(state='disabled')
 
     # Faktyczny rezultat
-    tk.Label(editable_frame, text="Faktyczny rezultat:", font=('Helvetica', 10, 'bold')).pack(anchor='w', pady=(10, 5), fill='x')
-    actual_text = tk.Text(editable_frame, height=6, wrap='word', state='disabled')
-    actual_text.pack(fill='x', pady=(0, 10))
+    tk.Label(editable_frame, text="Faktyczny rezultat:", font=STYLES['font_subheading'], 
+            bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(anchor='w', pady=(STYLES['padding_medium'], STYLES['padding_small']), fill='x')
+    actual_text = tk.Text(editable_frame, height=6, wrap='word', state='disabled',
+                         bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'], 
+                         insertbackground=COLORS['text_primary'], relief='flat',
+                         font=STYLES['font_body'])
+    actual_text.pack(fill='x', pady=(0, STYLES['padding_medium']))
     actual_text.config(state='normal')
     actual_text.insert(tk.END, bug['actual'])
     actual_text.config(state='disabled')
 
     # Notatki
-    tk.Label(editable_frame, text="Notatki / Dodatkowe informacje:", font=('Helvetica', 10, 'bold')).pack(anchor='w', pady=(10, 5), fill='x')
-    notes_text = tk.Text(editable_frame, height=6, wrap='word', state='disabled')
-    notes_text.pack(fill='x', pady=(0, 10))
+    tk.Label(editable_frame, text="Notatki / Dodatkowe informacje:", font=STYLES['font_subheading'], 
+            bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(anchor='w', pady=(STYLES['padding_medium'], STYLES['padding_small']), fill='x')
+    notes_text = tk.Text(editable_frame, height=6, wrap='word', state='disabled',
+                        bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'], 
+                        insertbackground=COLORS['text_primary'], relief='flat',
+                        font=STYLES['font_body'])
+    notes_text.pack(fill='x', pady=(0, STYLES['padding_medium']))
     notes_text.config(state='normal')
     notes_text.insert(tk.END, bug['notes'])
     notes_text.config(state='disabled')
 
     # === Zrzuty ekranu ===
     if 'screenshots' in bug and bug['screenshots']:
-        screenshots_frame = tk.Frame(scrollable_frame)
-        screenshots_frame.pack(fill='x', padx=10, pady=10)
+        screenshots_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
+        screenshots_frame.pack(fill='x', padx=STYLES['padding_large'], pady=STYLES['padding_medium'])
         
-        tk.Label(screenshots_frame, text="Zrzuty ekranu:", font=('Helvetica', 10, 'bold')).pack(anchor='w', fill='x')
+        tk.Label(screenshots_frame, text="Zrzuty ekranu:", font=STYLES['font_subheading'], 
+                bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(anchor='w', fill='x')
         
         # Kontener na miniatury
-        thumbnails_frame = tk.Frame(screenshots_frame)
-        thumbnails_frame.pack(fill='x', pady=5)
+        thumbnails_frame = tk.Frame(screenshots_frame, bg=COLORS['bg_primary'])
+        thumbnails_frame.pack(fill='x', pady=STYLES['padding_small'])
         
         for i, screenshot_filename in enumerate(bug['screenshots']):
             screenshot_path = get_screenshot_path(screenshot_filename)
@@ -210,34 +328,40 @@ def show_bug_details(bug):
                 thumbnail = create_thumbnail(screenshot_path, (80, 80))
                 if thumbnail:
                     # Kontener na miniaturę
-                    thumb_container = tk.Frame(thumbnails_frame, relief="solid", bd=1)
+                    thumb_container = tk.Frame(thumbnails_frame, relief="solid", bd=1, 
+                                             bg=COLORS['bg_tertiary'], highlightbackground=COLORS['border'])
                     thumb_container.pack(side='left', padx=5, pady=5)
                     
                     # Miniatura z możliwością kliknięcia
-                    thumb_label = tk.Label(thumb_container, image=thumbnail, cursor="hand2")
+                    thumb_label = tk.Label(thumb_container, image=thumbnail, cursor="hand2",
+                                         bg=COLORS['bg_tertiary'])
                     thumb_label.image = thumbnail  # Zachowaj referencję
                     thumb_label.pack(padx=5, pady=5)
                     thumb_label.bind("<Button-1>", lambda e, path=screenshot_path: show_image_preview(path))
                     
                     # Numer screenshotu
-                    tk.Label(thumb_container, text=f"#{i+1}", font=('Helvetica', 8), fg="gray").pack()
+                    tk.Label(thumb_container, text=f"#{i+1}", font=STYLES['font_small'], 
+                            fg=COLORS['text_muted'], bg=COLORS['bg_tertiary']).pack()
             else:
                 # Jeśli plik nie istnieje, pokaż informację
                 tk.Label(thumbnails_frame, text=f"❌ Brak pliku: {screenshot_filename}", 
-                        fg="red", font=('Helvetica', 9)).pack(side='left', padx=5, pady=5)
+                        fg=COLORS['error'], bg=COLORS['bg_primary'], 
+                        font=STYLES['font_body']).pack(side='left', padx=5, pady=5)
 
     # === Sekcja edycji zrzutów ekranu (tylko w trybie edycji) ===
-    edit_screenshots_frame = tk.Frame(scrollable_frame)
-    edit_screenshots_frame.pack(fill='x', padx=10, pady=10)
+    edit_screenshots_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
+    edit_screenshots_frame.pack(fill='x', padx=STYLES['padding_large'], pady=STYLES['padding_medium'])
     
     # Nagłówek sekcji edycji zrzutów ekranu
-    edit_screenshots_header = tk.Label(edit_screenshots_frame, text="Dodaj nowe zrzuty ekranu:", font=('Helvetica', 10, 'bold'), anchor='w')
+    edit_screenshots_header = tk.Label(edit_screenshots_frame, text="Dodaj nowe zrzuty ekranu:", 
+                                      font=STYLES['font_subheading'], anchor='w',
+                                      bg=COLORS['bg_primary'], fg=COLORS['text_primary'])
     edit_screenshots_header.pack(anchor='w', fill='x')
     
     # Lista wybranych nowych zrzutów ekranu
     new_screenshots = []
-    edit_screenshots_list_frame = tk.Frame(edit_screenshots_frame)
-    edit_screenshots_list_frame.pack(fill='x', pady=5)
+    edit_screenshots_list_frame = tk.Frame(edit_screenshots_frame, bg=COLORS['bg_primary'])
+    edit_screenshots_list_frame.pack(fill='x', pady=STYLES['padding_small'])
     
     def add_new_screenshot():
         file_path = filedialog.askopenfilename(
@@ -263,16 +387,20 @@ def show_bug_details(bug):
         
         # Pokaż wybrane nowe zrzuty ekranu
         for i, screenshot_path in enumerate(new_screenshots):
-            screenshot_frame = tk.Frame(edit_screenshots_list_frame, relief="solid", bd=1)
+            screenshot_frame = tk.Frame(edit_screenshots_list_frame, relief="solid", bd=1,
+                                      bg=COLORS['bg_tertiary'], highlightbackground=COLORS['border'])
             screenshot_frame.pack(fill='x', pady=2)
             
             # Nazwa pliku
             filename = os.path.basename(screenshot_path)
-            tk.Label(screenshot_frame, text=f"📷 {filename}", anchor='w').pack(side='left', padx=5, pady=2, fill='x', expand=True)
+            tk.Label(screenshot_frame, text=f"📷 {filename}", anchor='w',
+                    bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'],
+                    font=STYLES['font_body']).pack(side='left', padx=5, pady=2, fill='x', expand=True)
             
             # Przycisk usuwania
             tk.Button(screenshot_frame, text="❌", command=lambda idx=i: remove_new_screenshot(idx),
-                     bg="#f44336", fg="white", width=3).pack(side='right', padx=5, pady=2)
+                     bg=COLORS['error'], fg=COLORS['text_primary'], width=3,
+                     relief='flat', font=STYLES['font_small']).pack(side='right', padx=5, pady=2)
         
         # Aktualizuj label z liczbą zrzutów
         if new_screenshots:
@@ -281,16 +409,16 @@ def show_bug_details(bug):
             new_screenshots_label.config(text="")
     
     # Przyciski do zarządzania nowymi zrzutami ekranu
-    edit_screenshots_buttons_frame = tk.Frame(edit_screenshots_frame)
-    edit_screenshots_buttons_frame.pack(fill='x', pady=5)
+    edit_screenshots_buttons_frame = tk.Frame(edit_screenshots_frame, bg=COLORS['bg_primary'])
+    edit_screenshots_buttons_frame.pack(fill='x', pady=STYLES['padding_small'])
     
-    edit_add_screenshot_btn = tk.Button(edit_screenshots_buttons_frame, text="📷 Dodaj zrzut ekranu", command=add_new_screenshot,
-                                       bg="#FF9800", fg="white", padx=10, pady=5)
-    edit_add_screenshot_btn.pack(side='left', padx=(0, 10))
+    edit_add_screenshot_btn = create_modern_button(edit_screenshots_buttons_frame, "📷 Dodaj zrzut ekranu", add_new_screenshot, 'warning')
+    edit_add_screenshot_btn.pack(side='left', padx=(0, STYLES['padding_medium']))
     
     # Label do wyświetlania liczby nowych zrzutów
-    new_screenshots_label = tk.Label(edit_screenshots_buttons_frame, text="", fg="blue")
-    new_screenshots_label.pack(side='left', padx=(10, 0))
+    new_screenshots_label = tk.Label(edit_screenshots_buttons_frame, text="", fg=COLORS['accent_blue'],
+                                   bg=COLORS['bg_primary'], font=STYLES['font_body'])
+    new_screenshots_label.pack(side='left', padx=(STYLES['padding_medium'], 0))
 
     # Początkowo ukryj sekcję edycji zrzutów ekranu
     edit_screenshots_header.pack_forget()
@@ -298,20 +426,21 @@ def show_bug_details(bug):
     edit_screenshots_list_frame.pack_forget()
 
     # === Zmiana statusu ===
-    status_frame = tk.Frame(scrollable_frame)
-    status_frame.pack(pady=10, fill='x', padx=10)
+    status_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
+    status_frame.pack(pady=STYLES['padding_medium'], fill='x', padx=STYLES['padding_large'])
 
-    tk.Label(status_frame, text="Status:", font=('Helvetica', 10, 'bold')).pack(side='left', padx=(0, 10))
+    tk.Label(status_frame, text="Status:", font=STYLES['font_subheading'], 
+            bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(side='left', padx=(0, STYLES['padding_medium']))
     status_var = tk.StringVar(value=bug['status'])
     status_dropdown = ttk.Combobox(status_frame, textvariable=status_var, values=["W trakcie", "Zakończone"], state="disabled")
     status_dropdown.pack(side='left')
 
     # === Przyciski ===
-    buttons_frame = tk.Frame(scrollable_frame)
-    buttons_frame.pack(pady=10, fill='x', padx=10)
+    buttons_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
+    buttons_frame.pack(pady=STYLES['padding_medium'], fill='x', padx=STYLES['padding_large'])
     
     # Kontener do wyśrodkowania przycisków
-    buttons_center_frame = tk.Frame(buttons_frame)
+    buttons_center_frame = tk.Frame(buttons_frame, bg=COLORS['bg_primary'])
     buttons_center_frame.pack(expand=True)
 
     edit_mode = False
@@ -325,16 +454,15 @@ def show_bug_details(bug):
             actual_text.config(state='normal')
             notes_text.config(state='normal')
             status_dropdown.config(state="readonly")
-            edit_button.config(text="❌ Anuluj edycję", bg="#f44336")
+            edit_button.config(text="❌ Anuluj edycję")
+            edit_button.configure(bg=COLORS['error'], fg=COLORS['text_primary'])
             edit_mode = True
-            
             # Pokaż sekcję edycji zrzutów ekranu
             edit_screenshots_header.pack(fill='x')
             edit_screenshots_buttons_frame.pack(fill='x')
             edit_screenshots_list_frame.pack(fill='x')
-            
             # Pokaż przycisk zapisu
-            save_button.pack(side='left', padx=5)
+            save_button.pack(side='left', padx=STYLES['padding_small'])
         else:
             # Wyłącz tryb edycji
             steps_text.config(state='disabled')
@@ -342,42 +470,35 @@ def show_bug_details(bug):
             actual_text.config(state='disabled')
             notes_text.config(state='disabled')
             status_dropdown.config(state="disabled")
-            edit_button.config(text="✏️ Edytuj raport", bg="#2196F3")
+            edit_button.config(text="✏️ Edytuj raport")
+            edit_button.configure(bg=COLORS['accent_blue'], fg=COLORS['text_primary'])
             edit_mode = False
-            
             # Ukryj sekcję edycji zrzutów ekranu
             edit_screenshots_header.pack_forget()
             edit_screenshots_buttons_frame.pack_forget()
             edit_screenshots_list_frame.pack_forget()
-            
             # Wyczyść nowe zrzuty ekranu
             new_screenshots.clear()
             update_edit_screenshots_display()
-            
             # Ukryj przycisk zapisu
             save_button.pack_forget()
-            
             # Przywróć oryginalne wartości
             steps_text.config(state='normal')
             steps_text.delete("1.0", tk.END)
             steps_text.insert(tk.END, bug['steps'])
             steps_text.config(state='disabled')
-            
             expected_text.config(state='normal')
             expected_text.delete("1.0", tk.END)
             expected_text.insert(tk.END, bug['expected'])
             expected_text.config(state='disabled')
-            
             actual_text.config(state='normal')
             actual_text.delete("1.0", tk.END)
             actual_text.insert(tk.END, bug['actual'])
             actual_text.config(state='disabled')
-            
             notes_text.config(state='normal')
             notes_text.delete("1.0", tk.END)
             notes_text.insert(tk.END, bug['notes'])
             notes_text.config(state='disabled')
-            
             # Przywróć oryginalny status
             status_var.set(bug['status'])
 
@@ -386,7 +507,6 @@ def show_bug_details(bug):
             # Wczytaj wszystkie bugi
             with open(BUGS_FILE, "r", encoding="utf-8") as f:
                 bugs = json.load(f)
-
             # Znajdź i zaktualizuj
             for b in bugs:
                 if b['title'] == bug['title'] and b['environment'] == bug['environment']:
@@ -395,44 +515,40 @@ def show_bug_details(bug):
                     b['expected'] = expected_text.get("1.0", tk.END).strip()
                     b['actual'] = actual_text.get("1.0", tk.END).strip()
                     b['notes'] = notes_text.get("1.0", tk.END).strip()
-                    
                     # Dodaj nowe zrzuty ekranu do istniejących
                     if new_screenshots:
-                        # Zapisz nowe zrzuty ekranu
                         bug_title = bug['title']
                         existing_count = len(b.get('screenshots', []))
-                        
                         for i, screenshot_path in enumerate(new_screenshots):
                             filename = copy_screenshot_to_folder(screenshot_path, bug_title, existing_count + i + 1)
                             if filename:
                                 if 'screenshots' not in b:
                                     b['screenshots'] = []
                                 b['screenshots'].append(filename)
-                    
                     break
-
             # Zapisz ponownie
             with open(BUGS_FILE, "w", encoding="utf-8") as f:
                 json.dump(bugs, f, indent=2, ensure_ascii=False)
-
             print(f"✅ Zapisano zmiany: {bug['title']}")
             if new_screenshots:
                 print(f"📷 Dodano {len(new_screenshots)} nowych zrzutów ekranu")
-            detail_window.destroy()
-            load_bugs()
-
+            # Po zapisaniu wróć do trybu podglądu, nie zamykaj okna
+            toggle_edit_mode()
+            load_bugs()  # odśwież listę bugów w głównym oknie
         except Exception as e:
             print("❌ Błąd przy zapisie zmian:", e)
 
-    # Przycisk edycji
-    edit_button = tk.Button(buttons_center_frame, text="✏️ Edytuj raport", command=toggle_edit_mode,
-                           bg="#2196F3", fg="white", padx=10, pady=5)
-    edit_button.pack(side='left', padx=5)
-
     # Przycisk zapisu (początkowo ukryty)
-    save_button = tk.Button(buttons_center_frame, text="💾 Zapisz zmiany", command=save_changes,
-                           bg="#4CAF50", fg="white", padx=10, pady=5)
-    
+    save_button = create_modern_button(buttons_center_frame, "💾 Zapisz zmiany", save_changes, 'success')
+
+    # Przycisk edycji
+    edit_button = create_modern_button(buttons_center_frame, "✏️ Edytuj raport", toggle_edit_mode, 'primary')
+    edit_button.pack(side='left', padx=STYLES['padding_small'])
+
+    # === Przycisk zamknięcia ===
+    close_btn = create_modern_button(buttons_center_frame, "❌ Zamknij podgląd", detail_window.destroy, 'secondary')
+    close_btn.pack(side='left', padx=STYLES['padding_small'])
+
     # === Przycisk usuwania ===
     def delete_bug():
         if messagebox.askyesno("Potwierdzenie", "Czy na pewno chcesz usunąć tego buga?"):
@@ -453,14 +569,8 @@ def show_bug_details(bug):
             except Exception as e:
                 print("❌ Błąd przy usuwaniu buga:", e)
 
-    tk.Button(buttons_center_frame, text="🗑️ Usuń buga", command=delete_bug,
-              bg="#f44336", fg="white", padx=10, pady=5).pack(side='left', padx=5)
-
-    # === Przycisk zamknięcia ===
-    tk.Button(buttons_center_frame, text="❌ Zamknij podgląd", command=detail_window.destroy,
-              bg="#9E9E9E", fg="white", padx=10, pady=5).pack(side='left', padx=5)
-
-
+    delete_btn = create_modern_button(buttons_center_frame, "🗑️ Usuń buga", delete_bug, 'error')
+    delete_btn.pack(side='left', padx=STYLES['padding_small'])
 
 def load_bugs():
     # Wyczyść wszystkie zakładki
@@ -475,20 +585,29 @@ def load_bugs():
 
             if not bugs:
                 for tab in (tab_all, tab_in_progress, tab_done):
-                    tk.Label(tab, text="Brak zgłoszonych bugów", fg="gray").pack(pady=20)
+                    empty_label = tk.Label(tab, text="Brak zgłoszonych bugów", 
+                                         fg=COLORS['text_muted'], bg=COLORS['bg_secondary'],
+                                         font=STYLES['font_body'])
+                    empty_label.pack(pady=STYLES['padding_large'])
                 return
 
             # Funkcja pomocnicza do tworzenia karty buga
             def create_bug_card(parent, bug):
-                frame = tk.Frame(parent, bd=1, relief="solid", padx=10, pady=5)
-                frame.pack(fill='x', padx=10, pady=5)
+                frame = tk.Frame(parent, bg=COLORS['bg_tertiary'], relief='flat', 
+                               bd=STYLES['border_width'], highlightbackground=COLORS['border'],
+                               highlightthickness=STYLES['border_width'])
+                frame.pack(fill='x', padx=STYLES['padding_medium'], pady=STYLES['padding_small'])
 
-                title = tk.Label(frame, text=f"🐞 {bug['title']}", font=('Helvetica', 10, 'bold'), anchor='w', cursor="hand2", wraplength=600, justify='left')
-                title.pack(fill='x')
+                title = tk.Label(frame, text=f"🐞 {bug['title']}", font=STYLES['font_subheading'], 
+                               anchor='w', cursor="hand2", wraplength=600, justify='left',
+                               bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'])
+                title.pack(fill='x', padx=STYLES['padding_medium'], pady=(STYLES['padding_small'], 0))
                 title.bind("<Button-1>", lambda e, b=bug: show_bug_details(b))
 
-                info = tk.Label(frame, text=f"Ważność: {bug['severity']} | Status: {bug['status']}", font=('Helvetica', 9), fg="gray", anchor='w')
-                info.pack(fill='x')
+                info = tk.Label(frame, text=f"Ważność: {bug['severity']} | Status: {bug['status']}", 
+                              font=STYLES['font_small'], fg=COLORS['text_secondary'], anchor='w',
+                              bg=COLORS['bg_tertiary'])
+                info.pack(fill='x', padx=STYLES['padding_medium'], pady=(0, STYLES['padding_small']))
 
             # Rozdziel bugi do odpowiednich zakładek
             for bug in bugs:
@@ -501,10 +620,16 @@ def load_bugs():
 
         except Exception as e:
             for tab in (tab_all, tab_in_progress, tab_done):
-                tk.Label(tab, text=f"Błąd przy wczytywaniu bugów: {e}", fg="red").pack(pady=20)
+                error_label = tk.Label(tab, text=f"Błąd przy wczytywaniu bugów: {e}", 
+                                     fg=COLORS['error'], bg=COLORS['bg_secondary'],
+                                     font=STYLES['font_body'])
+                error_label.pack(pady=STYLES['padding_large'])
     else:
         for tab in (tab_all, tab_in_progress, tab_done):
-            tk.Label(tab, text="Brak pliku z bugami", fg="gray").pack(pady=20)
+            no_file_label = tk.Label(tab, text="Brak pliku z bugami", 
+                                   fg=COLORS['text_muted'], bg=COLORS['bg_secondary'],
+                                   font=STYLES['font_body'])
+            no_file_label.pack(pady=STYLES['padding_large'])
 
 
 # ====== Przycisk dodawania nowego buga ======
@@ -512,11 +637,12 @@ def open_bug_form():
     top = tk.Toplevel(root)
     top.title("Dodaj nowy bug")
     top.geometry("700x800")
+    top.configure(bg=COLORS['bg_primary'])
 
     # Tworzymy canvas z przewijaniem
-    canvas = tk.Canvas(top)
+    canvas = tk.Canvas(top, bg=COLORS['bg_primary'], highlightthickness=0)
     scrollbar = tk.Scrollbar(top, orient="vertical", command=canvas.yview)
-    scrollable_frame = tk.Frame(canvas)
+    scrollable_frame = tk.Frame(canvas, bg=COLORS['bg_primary'])
 
     scrollable_frame.bind(
         "<Configure>",
@@ -541,19 +667,27 @@ def open_bug_form():
     fields = {}
 
     def create_field(label_text, is_multiline=False):
-        label = tk.Label(scrollable_frame, text=label_text, anchor='w')
-        label.pack(anchor='w', padx=10, pady=(10, 0), fill='x')
+        label = tk.Label(scrollable_frame, text=label_text, anchor='w', 
+                        bg=COLORS['bg_primary'], fg=COLORS['text_primary'], 
+                        font=STYLES['font_body'])
+        label.pack(anchor='w', padx=STYLES['padding_large'], pady=(STYLES['padding_medium'], 0), fill='x')
         if is_multiline:
-            entry = tk.Text(scrollable_frame, height=5, wrap='word')
+            entry = tk.Text(scrollable_frame, height=5, wrap='word',
+                           bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'],
+                           insertbackground=COLORS['text_primary'], relief='flat',
+                           font=STYLES['font_body'])
         else:
-            entry = tk.Entry(scrollable_frame)
-        entry.pack(padx=10, fill='x')
+            entry = tk.Entry(scrollable_frame, bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'],
+                           insertbackground=COLORS['text_primary'], relief='flat',
+                           font=STYLES['font_body'])
+        entry.pack(padx=STYLES['padding_large'], fill='x')
         return entry
 
     # Pola formularza
     fields['title'] = create_field("1. Tytuł błędu:")
 
-    tk.Label(scrollable_frame, text="2. Środowisko:", font=('Helvetica', 10, 'bold'), anchor='w').pack(anchor='w', padx=10, pady=(10, 0), fill='x')
+    tk.Label(scrollable_frame, text="2. Środowisko:", font=STYLES['font_subheading'], 
+            anchor='w', bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(anchor='w', padx=STYLES['padding_large'], pady=(STYLES['padding_medium'], 0), fill='x')
     fields['game_version'] = create_field("Wersja gry:")
     fields['platform'] = create_field("Platforma:")
     fields['device'] = create_field("Urządzenie:")
@@ -563,26 +697,29 @@ def open_bug_form():
     fields['expected'] = create_field("4. Oczekiwany rezultat:", is_multiline=True)
     fields['actual'] = create_field("5. Faktyczny rezultat:", is_multiline=True)
 
-    tk.Label(scrollable_frame, text="6. Ważność błędu:", anchor='w').pack(anchor='w', padx=10, pady=(10, 0), fill='x')
+    tk.Label(scrollable_frame, text="6. Ważność błędu:", anchor='w', 
+            bg=COLORS['bg_primary'], fg=COLORS['text_primary'], 
+            font=STYLES['font_body']).pack(anchor='w', padx=STYLES['padding_large'], pady=(STYLES['padding_medium'], 0), fill='x')
     severity_var = tk.StringVar(value="Drobny")
     severity_dropdown = ttk.Combobox(scrollable_frame, textvariable=severity_var, values=[
         "Kosmetyczny", "Drobny", "Poważny", "Krytyczny"
     ], state="readonly")
-    severity_dropdown.pack(padx=10, fill='x')
+    severity_dropdown.pack(padx=STYLES['padding_large'], fill='x')
     fields['severity'] = severity_var
 
     fields['notes'] = create_field("7. Notatki / Dodatkowe informacje:", is_multiline=True)
 
     # === Sekcja zrzutów ekranu ===
-    screenshots_frame = tk.Frame(scrollable_frame)
-    screenshots_frame.pack(fill='x', padx=10, pady=10)
+    screenshots_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
+    screenshots_frame.pack(fill='x', padx=STYLES['padding_large'], pady=STYLES['padding_medium'])
     
-    tk.Label(screenshots_frame, text="8. Zrzuty ekranu (opcjonalne):", font=('Helvetica', 10, 'bold'), anchor='w').pack(anchor='w', fill='x')
+    tk.Label(screenshots_frame, text="8. Zrzuty ekranu (opcjonalne):", font=STYLES['font_subheading'], 
+            anchor='w', bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(anchor='w', fill='x')
     
     # Lista wybranych screenshotsów
     selected_screenshots = []
-    screenshots_list_frame = tk.Frame(screenshots_frame)
-    screenshots_list_frame.pack(fill='x', pady=5)
+    screenshots_list_frame = tk.Frame(screenshots_frame, bg=COLORS['bg_primary'])
+    screenshots_list_frame.pack(fill='x', pady=STYLES['padding_small'])
     
     def add_screenshot():
         file_path = filedialog.askopenfilename(
@@ -608,27 +745,32 @@ def open_bug_form():
         
         # Pokaż wybrane screenshotsy
         for i, screenshot_path in enumerate(selected_screenshots):
-            screenshot_frame = tk.Frame(screenshots_list_frame, relief="solid", bd=1)
+            screenshot_frame = tk.Frame(screenshots_list_frame, relief="solid", bd=1, 
+                                      bg=COLORS['bg_tertiary'], highlightbackground=COLORS['border'])
             screenshot_frame.pack(fill='x', pady=2)
             
             # Nazwa pliku
             filename = os.path.basename(screenshot_path)
-            tk.Label(screenshot_frame, text=f"📷 {filename}", anchor='w').pack(side='left', padx=5, pady=2, fill='x', expand=True)
+            tk.Label(screenshot_frame, text=f"📷 {filename}", anchor='w', 
+                    bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'],
+                    font=STYLES['font_body']).pack(side='left', padx=5, pady=2, fill='x', expand=True)
             
             # Przycisk usuwania
             tk.Button(screenshot_frame, text="❌", command=lambda idx=i: remove_screenshot(idx),
-                     bg="#f44336", fg="white", width=3).pack(side='right', padx=5, pady=2)
+                     bg=COLORS['error'], fg=COLORS['text_primary'], width=3,
+                     relief='flat', font=STYLES['font_small']).pack(side='right', padx=5, pady=2)
     
     # Przyciski do zarządzania screenshotsami
-    screenshots_buttons_frame = tk.Frame(screenshots_frame)
-    screenshots_buttons_frame.pack(fill='x', pady=5)
+    screenshots_buttons_frame = tk.Frame(screenshots_frame, bg=COLORS['bg_primary'])
+    screenshots_buttons_frame.pack(fill='x', pady=STYLES['padding_small'])
     
-    tk.Button(screenshots_buttons_frame, text="📷 Dodaj screenshot", command=add_screenshot,
-              bg="#FF9800", fg="white", padx=10, pady=5).pack(side='left', padx=(0, 10))
+    add_screenshot_btn = create_modern_button(screenshots_buttons_frame, "📷 Dodaj screenshot", add_screenshot, 'warning')
+    add_screenshot_btn.pack(side='left', padx=(0, STYLES['padding_medium']))
     
     if selected_screenshots:
         tk.Label(screenshots_buttons_frame, text=f"Wybrano: {len(selected_screenshots)} screenshotów", 
-                fg="gray").pack(side='left')
+                fg=COLORS['text_secondary'], bg=COLORS['bg_primary'],
+                font=STYLES['font_body']).pack(side='left')
 
     def save_bug():
         try:
@@ -683,17 +825,22 @@ def open_bug_form():
             print("❌ Błąd przy zapisie buga:", e)
 
     # Kontener do wyśrodkowania przycisku
-    button_frame = tk.Frame(scrollable_frame)
-    button_frame.pack(pady=20, fill='x')
+    button_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
+    button_frame.pack(pady=STYLES['padding_large'], fill='x')
     
-    button_center_frame = tk.Frame(button_frame)
+    button_center_frame = tk.Frame(button_frame, bg=COLORS['bg_primary'])
     button_center_frame.pack(expand=True)
 
-    tk.Button(button_center_frame, text="💾 Zapisz bug", command=save_bug,
-              bg="#2196F3", fg="white", padx=10, pady=5).pack()
+    save_btn = create_modern_button(button_center_frame, "💾 Zapisz bug", save_bug, 'success')
+    save_btn.pack()
 
-add_bug_btn = tk.Button(root, text="➕ Dodaj nowy bug", command=open_bug_form, bg="#4CAF50", fg="white", padx=10, pady=5)
-add_bug_btn.pack(pady=10)
+add_bug_btn = tk.Button(root, text="➕ Dodaj nowy bug", command=open_bug_form, 
+                       bg=COLORS['accent_blue'], fg=COLORS['text_primary'], 
+                       font=STYLES['font_body'], padx=STYLES['padding_medium'], 
+                       pady=STYLES['padding_small'], relief='flat', 
+                       activebackground=COLORS['accent_green'],
+                       activeforeground=COLORS['text_primary'])
+add_bug_btn.pack(pady=STYLES['padding_medium'])
 
 # ====== Uruchomienie ======
 load_bugs()
