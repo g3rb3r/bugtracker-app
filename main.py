@@ -1,9 +1,97 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+from tkinter import filedialog
+from PIL import Image, ImageTk
 import json
 import os
+import shutil
+from datetime import datetime
 BUGS_FILE = "bugs.json"
+SCREENSHOTS_DIR = "screenshots"
+
+# Funkcje pomocnicze do obsługi screenshotsów
+def get_screenshot_filename(bug_title, index):
+    """Generuje nazwę pliku dla screenshotu"""
+    # Usuń znaki specjalne z tytułu
+    safe_title = "".join(c for c in bug_title if c.isalnum() or c in (' ', '-', '_')).rstrip()
+    safe_title = safe_title.replace(' ', '_')
+    return f"{safe_title}_{index}.png"
+
+def copy_screenshot_to_folder(source_path, bug_title, index):
+    """Kopiuje screenshot do folderu screenshots z odpowiednią nazwą"""
+    if not os.path.exists(SCREENSHOTS_DIR):
+        os.makedirs(SCREENSHOTS_DIR)
+    
+    filename = get_screenshot_filename(bug_title, index)
+    destination = os.path.join(SCREENSHOTS_DIR, filename)
+    
+    try:
+        shutil.copy2(source_path, destination)
+        return filename
+    except Exception as e:
+        print(f"❌ Błąd przy kopiowaniu screenshotu: {e}")
+        return None
+
+def get_screenshot_path(filename):
+    """Zwraca pełną ścieżkę do screenshotu"""
+    return os.path.join(SCREENSHOTS_DIR, filename)
+
+def create_thumbnail(image_path, size=(100, 100)):
+    """Tworzy miniaturę obrazu"""
+    try:
+        with Image.open(image_path) as img:
+            img.thumbnail(size, Image.Resampling.LANCZOS)
+            return ImageTk.PhotoImage(img)
+    except Exception as e:
+        print(f"❌ Błąd przy tworzeniu miniatury: {e}")
+        return None
+
+def show_image_preview(image_path):
+    """Pokazuje podgląd obrazu w nowym oknie"""
+    try:
+        with Image.open(image_path) as img:
+            # Dostosuj rozmiar obrazu do ekranu
+            screen_width = root.winfo_screenwidth() - 100
+            screen_height = root.winfo_screenheight() - 100
+            
+            # Oblicz proporcje
+            img_width, img_height = img.size
+            ratio = min(screen_width / img_width, screen_height / img_height)
+            
+            if ratio < 1:
+                new_width = int(img_width * ratio)
+                new_height = int(img_height * ratio)
+                img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            
+            photo = ImageTk.PhotoImage(img)
+            
+            # Utwórz okno podglądu
+            preview_window = tk.Toplevel()
+            preview_window.title(f"Podgląd screenshotu")
+            preview_window.geometry(f"{img.size[0] + 20}x{img.size[1] + 40}")
+            
+            # Wyśrodkuj okno
+            preview_window.update_idletasks()
+            x = (preview_window.winfo_screenwidth() // 2) - (preview_window.winfo_width() // 2)
+            y = (preview_window.winfo_screenheight() // 2) - (preview_window.winfo_height() // 2)
+            preview_window.geometry(f"+{x}+{y}")
+            
+            # Dodaj obraz
+            label = tk.Label(preview_window, image=photo)
+            label.pack(padx=10, pady=10)
+            
+            # Przycisk zamknięcia
+            close_button = tk.Button(preview_window, text="Zamknij", command=preview_window.destroy,
+                     bg="#f44336", fg="white", padx=10, pady=5)
+            close_button.pack(pady=10)
+            
+            # Zachowaj referencję do obrazu w przycisku
+            close_button.photo = photo
+            
+    except Exception as e:
+        print(f"❌ Błąd przy wyświetlaniu podglądu: {e}")
+        messagebox.showerror("Błąd", f"Nie można wyświetlić obrazu: {e}")
 
 # Konfiguracja głównego okna
 root = tk.Tk()
@@ -104,6 +192,111 @@ def show_bug_details(bug):
     notes_text.insert(tk.END, bug['notes'])
     notes_text.config(state='disabled')
 
+    # === Zrzuty ekranu ===
+    if 'screenshots' in bug and bug['screenshots']:
+        screenshots_frame = tk.Frame(scrollable_frame)
+        screenshots_frame.pack(fill='x', padx=10, pady=10)
+        
+        tk.Label(screenshots_frame, text="Zrzuty ekranu:", font=('Helvetica', 10, 'bold')).pack(anchor='w', fill='x')
+        
+        # Kontener na miniatury
+        thumbnails_frame = tk.Frame(screenshots_frame)
+        thumbnails_frame.pack(fill='x', pady=5)
+        
+        for i, screenshot_filename in enumerate(bug['screenshots']):
+            screenshot_path = get_screenshot_path(screenshot_filename)
+            if os.path.exists(screenshot_path):
+                # Utwórz miniaturę
+                thumbnail = create_thumbnail(screenshot_path, (80, 80))
+                if thumbnail:
+                    # Kontener na miniaturę
+                    thumb_container = tk.Frame(thumbnails_frame, relief="solid", bd=1)
+                    thumb_container.pack(side='left', padx=5, pady=5)
+                    
+                    # Miniatura z możliwością kliknięcia
+                    thumb_label = tk.Label(thumb_container, image=thumbnail, cursor="hand2")
+                    thumb_label.image = thumbnail  # Zachowaj referencję
+                    thumb_label.pack(padx=5, pady=5)
+                    thumb_label.bind("<Button-1>", lambda e, path=screenshot_path: show_image_preview(path))
+                    
+                    # Numer screenshotu
+                    tk.Label(thumb_container, text=f"#{i+1}", font=('Helvetica', 8), fg="gray").pack()
+            else:
+                # Jeśli plik nie istnieje, pokaż informację
+                tk.Label(thumbnails_frame, text=f"❌ Brak pliku: {screenshot_filename}", 
+                        fg="red", font=('Helvetica', 9)).pack(side='left', padx=5, pady=5)
+
+    # === Sekcja edycji zrzutów ekranu (tylko w trybie edycji) ===
+    edit_screenshots_frame = tk.Frame(scrollable_frame)
+    edit_screenshots_frame.pack(fill='x', padx=10, pady=10)
+    
+    # Nagłówek sekcji edycji zrzutów ekranu
+    edit_screenshots_header = tk.Label(edit_screenshots_frame, text="Dodaj nowe zrzuty ekranu:", font=('Helvetica', 10, 'bold'), anchor='w')
+    edit_screenshots_header.pack(anchor='w', fill='x')
+    
+    # Lista wybranych nowych zrzutów ekranu
+    new_screenshots = []
+    edit_screenshots_list_frame = tk.Frame(edit_screenshots_frame)
+    edit_screenshots_list_frame.pack(fill='x', pady=5)
+    
+    def add_new_screenshot():
+        file_path = filedialog.askopenfilename(
+            title="Wybierz zrzut ekranu",
+            filetypes=[
+                ("Obrazy", "*.png *.jpg *.jpeg *.gif *.bmp"),
+                ("Wszystkie pliki", "*.*")
+            ]
+        )
+        if file_path:
+            new_screenshots.append(file_path)
+            update_edit_screenshots_display()
+    
+    def remove_new_screenshot(index):
+        if 0 <= index < len(new_screenshots):
+            new_screenshots.pop(index)
+            update_edit_screenshots_display()
+    
+    def update_edit_screenshots_display():
+        # Wyczyść listę
+        for widget in edit_screenshots_list_frame.winfo_children():
+            widget.destroy()
+        
+        # Pokaż wybrane nowe zrzuty ekranu
+        for i, screenshot_path in enumerate(new_screenshots):
+            screenshot_frame = tk.Frame(edit_screenshots_list_frame, relief="solid", bd=1)
+            screenshot_frame.pack(fill='x', pady=2)
+            
+            # Nazwa pliku
+            filename = os.path.basename(screenshot_path)
+            tk.Label(screenshot_frame, text=f"📷 {filename}", anchor='w').pack(side='left', padx=5, pady=2, fill='x', expand=True)
+            
+            # Przycisk usuwania
+            tk.Button(screenshot_frame, text="❌", command=lambda idx=i: remove_new_screenshot(idx),
+                     bg="#f44336", fg="white", width=3).pack(side='right', padx=5, pady=2)
+        
+        # Aktualizuj label z liczbą zrzutów
+        if new_screenshots:
+            new_screenshots_label.config(text=f"Nowe: {len(new_screenshots)} zrzutów")
+        else:
+            new_screenshots_label.config(text="")
+    
+    # Przyciski do zarządzania nowymi zrzutami ekranu
+    edit_screenshots_buttons_frame = tk.Frame(edit_screenshots_frame)
+    edit_screenshots_buttons_frame.pack(fill='x', pady=5)
+    
+    edit_add_screenshot_btn = tk.Button(edit_screenshots_buttons_frame, text="📷 Dodaj zrzut ekranu", command=add_new_screenshot,
+                                       bg="#FF9800", fg="white", padx=10, pady=5)
+    edit_add_screenshot_btn.pack(side='left', padx=(0, 10))
+    
+    # Label do wyświetlania liczby nowych zrzutów
+    new_screenshots_label = tk.Label(edit_screenshots_buttons_frame, text="", fg="blue")
+    new_screenshots_label.pack(side='left', padx=(10, 0))
+
+    # Początkowo ukryj sekcję edycji zrzutów ekranu
+    edit_screenshots_header.pack_forget()
+    edit_screenshots_buttons_frame.pack_forget()
+    edit_screenshots_list_frame.pack_forget()
+
     # === Zmiana statusu ===
     status_frame = tk.Frame(scrollable_frame)
     status_frame.pack(pady=10, fill='x', padx=10)
@@ -135,6 +328,11 @@ def show_bug_details(bug):
             edit_button.config(text="❌ Anuluj edycję", bg="#f44336")
             edit_mode = True
             
+            # Pokaż sekcję edycji zrzutów ekranu
+            edit_screenshots_header.pack(fill='x')
+            edit_screenshots_buttons_frame.pack(fill='x')
+            edit_screenshots_list_frame.pack(fill='x')
+            
             # Pokaż przycisk zapisu
             save_button.pack(side='left', padx=5)
         else:
@@ -146,6 +344,15 @@ def show_bug_details(bug):
             status_dropdown.config(state="disabled")
             edit_button.config(text="✏️ Edytuj raport", bg="#2196F3")
             edit_mode = False
+            
+            # Ukryj sekcję edycji zrzutów ekranu
+            edit_screenshots_header.pack_forget()
+            edit_screenshots_buttons_frame.pack_forget()
+            edit_screenshots_list_frame.pack_forget()
+            
+            # Wyczyść nowe zrzuty ekranu
+            new_screenshots.clear()
+            update_edit_screenshots_display()
             
             # Ukryj przycisk zapisu
             save_button.pack_forget()
@@ -188,6 +395,20 @@ def show_bug_details(bug):
                     b['expected'] = expected_text.get("1.0", tk.END).strip()
                     b['actual'] = actual_text.get("1.0", tk.END).strip()
                     b['notes'] = notes_text.get("1.0", tk.END).strip()
+                    
+                    # Dodaj nowe zrzuty ekranu do istniejących
+                    if new_screenshots:
+                        # Zapisz nowe zrzuty ekranu
+                        bug_title = bug['title']
+                        existing_count = len(b.get('screenshots', []))
+                        
+                        for i, screenshot_path in enumerate(new_screenshots):
+                            filename = copy_screenshot_to_folder(screenshot_path, bug_title, existing_count + i + 1)
+                            if filename:
+                                if 'screenshots' not in b:
+                                    b['screenshots'] = []
+                                b['screenshots'].append(filename)
+                    
                     break
 
             # Zapisz ponownie
@@ -195,6 +416,8 @@ def show_bug_details(bug):
                 json.dump(bugs, f, indent=2, ensure_ascii=False)
 
             print(f"✅ Zapisano zmiany: {bug['title']}")
+            if new_screenshots:
+                print(f"📷 Dodano {len(new_screenshots)} nowych zrzutów ekranu")
             detail_window.destroy()
             load_bugs()
 
@@ -350,6 +573,63 @@ def open_bug_form():
 
     fields['notes'] = create_field("7. Notatki / Dodatkowe informacje:", is_multiline=True)
 
+    # === Sekcja zrzutów ekranu ===
+    screenshots_frame = tk.Frame(scrollable_frame)
+    screenshots_frame.pack(fill='x', padx=10, pady=10)
+    
+    tk.Label(screenshots_frame, text="8. Zrzuty ekranu (opcjonalne):", font=('Helvetica', 10, 'bold'), anchor='w').pack(anchor='w', fill='x')
+    
+    # Lista wybranych screenshotsów
+    selected_screenshots = []
+    screenshots_list_frame = tk.Frame(screenshots_frame)
+    screenshots_list_frame.pack(fill='x', pady=5)
+    
+    def add_screenshot():
+        file_path = filedialog.askopenfilename(
+            title="Wybierz screenshot",
+            filetypes=[
+                ("Obrazy", "*.png *.jpg *.jpeg *.gif *.bmp"),
+                ("Wszystkie pliki", "*.*")
+            ]
+        )
+        if file_path:
+            selected_screenshots.append(file_path)
+            update_screenshots_display()
+    
+    def remove_screenshot(index):
+        if 0 <= index < len(selected_screenshots):
+            selected_screenshots.pop(index)
+            update_screenshots_display()
+    
+    def update_screenshots_display():
+        # Wyczyść listę
+        for widget in screenshots_list_frame.winfo_children():
+            widget.destroy()
+        
+        # Pokaż wybrane screenshotsy
+        for i, screenshot_path in enumerate(selected_screenshots):
+            screenshot_frame = tk.Frame(screenshots_list_frame, relief="solid", bd=1)
+            screenshot_frame.pack(fill='x', pady=2)
+            
+            # Nazwa pliku
+            filename = os.path.basename(screenshot_path)
+            tk.Label(screenshot_frame, text=f"📷 {filename}", anchor='w').pack(side='left', padx=5, pady=2, fill='x', expand=True)
+            
+            # Przycisk usuwania
+            tk.Button(screenshot_frame, text="❌", command=lambda idx=i: remove_screenshot(idx),
+                     bg="#f44336", fg="white", width=3).pack(side='right', padx=5, pady=2)
+    
+    # Przyciski do zarządzania screenshotsami
+    screenshots_buttons_frame = tk.Frame(screenshots_frame)
+    screenshots_buttons_frame.pack(fill='x', pady=5)
+    
+    tk.Button(screenshots_buttons_frame, text="📷 Dodaj screenshot", command=add_screenshot,
+              bg="#FF9800", fg="white", padx=10, pady=5).pack(side='left', padx=(0, 10))
+    
+    if selected_screenshots:
+        tk.Label(screenshots_buttons_frame, text=f"Wybrano: {len(selected_screenshots)} screenshotów", 
+                fg="gray").pack(side='left')
+
     def save_bug():
         try:
             bug_data = {
@@ -365,8 +645,16 @@ def open_bug_form():
                 "actual": fields['actual'].get("1.0", tk.END).strip(),
                 "severity": fields['severity'].get(),
                 "notes": fields['notes'].get("1.0", tk.END).strip(),
-                "status": "W trakcie"
+                "status": "W trakcie",
+                "screenshots": []
             }
+
+            # Zapisz screenshotsy
+            bug_title = fields['title'].get()
+            for i, screenshot_path in enumerate(selected_screenshots):
+                filename = copy_screenshot_to_folder(screenshot_path, bug_title, i + 1)
+                if filename:
+                    bug_data["screenshots"].append(filename)
 
             # Wczytaj istniejące bugi (jeśli plik istnieje)
             if os.path.exists(BUGS_FILE):
@@ -384,6 +672,8 @@ def open_bug_form():
 
             # Informacja o sukcesie
             print("✅ Nowy bug zapisany:", bug_data)
+            if bug_data["screenshots"]:
+                print(f"📷 Zapisano {len(bug_data['screenshots'])} screenshotsów")
 
             # Zamknij formularz
             load_bugs()
