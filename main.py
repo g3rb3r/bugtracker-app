@@ -288,7 +288,7 @@ def load_bugs():
 def open_bug_form():
     top = tk.Toplevel(root)
     top.title("Dodaj nowy bug")
-    top.geometry("580x750")
+    top.geometry("700x800")
 
     # Tworzymy canvas z przewijaniem
     canvas = tk.Canvas(top)
@@ -308,22 +308,29 @@ def open_bug_form():
     canvas.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
 
+    # Konfiguracja canvas aby rozszerzał się na całą szerokość
+    def configure_canvas(event):
+        canvas.itemconfig(canvas_window, width=event.width)
+    
+    canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+    canvas.bind('<Configure>', configure_canvas)
+
     fields = {}
 
     def create_field(label_text, is_multiline=False):
-        label = tk.Label(scrollable_frame, text=label_text)
-        label.pack(anchor='w', padx=10, pady=(10, 0))
+        label = tk.Label(scrollable_frame, text=label_text, anchor='w')
+        label.pack(anchor='w', padx=10, pady=(10, 0), fill='x')
         if is_multiline:
-            entry = tk.Text(scrollable_frame, height=5, width=60, wrap='word')
+            entry = tk.Text(scrollable_frame, height=5, wrap='word')
         else:
-            entry = tk.Entry(scrollable_frame, width=60)
-        entry.pack(padx=10)
+            entry = tk.Entry(scrollable_frame)
+        entry.pack(padx=10, fill='x')
         return entry
 
     # Pola formularza
     fields['title'] = create_field("1. Tytuł błędu:")
 
-    tk.Label(scrollable_frame, text="2. Środowisko:", font=('Helvetica', 10, 'bold')).pack(anchor='w', padx=10, pady=(10, 0))
+    tk.Label(scrollable_frame, text="2. Środowisko:", font=('Helvetica', 10, 'bold'), anchor='w').pack(anchor='w', padx=10, pady=(10, 0), fill='x')
     fields['game_version'] = create_field("Wersja gry:")
     fields['platform'] = create_field("Platforma:")
     fields['device'] = create_field("Urządzenie:")
@@ -333,12 +340,12 @@ def open_bug_form():
     fields['expected'] = create_field("4. Oczekiwany rezultat:", is_multiline=True)
     fields['actual'] = create_field("5. Faktyczny rezultat:", is_multiline=True)
 
-    tk.Label(scrollable_frame, text="6. Ważność błędu:").pack(anchor='w', padx=10, pady=(10, 0))
+    tk.Label(scrollable_frame, text="6. Ważność błędu:", anchor='w').pack(anchor='w', padx=10, pady=(10, 0), fill='x')
     severity_var = tk.StringVar(value="Drobny")
     severity_dropdown = ttk.Combobox(scrollable_frame, textvariable=severity_var, values=[
         "Kosmetyczny", "Drobny", "Poważny", "Krytyczny"
-    ], width=57)
-    severity_dropdown.pack(padx=10)
+    ], state="readonly")
+    severity_dropdown.pack(padx=10, fill='x')
     fields['severity'] = severity_var
 
     fields['notes'] = create_field("7. Notatki / Dodatkowe informacje:", is_multiline=True)
@@ -385,10 +392,15 @@ def open_bug_form():
         except Exception as e:
             print("❌ Błąd przy zapisie buga:", e)
 
+    # Kontener do wyśrodkowania przycisku
+    button_frame = tk.Frame(scrollable_frame)
+    button_frame.pack(pady=20, fill='x')
+    
+    button_center_frame = tk.Frame(button_frame)
+    button_center_frame.pack(expand=True)
 
-
-    tk.Button(scrollable_frame, text="💾 Zapisz bug", command=save_bug,
-              bg="#2196F3", fg="white", padx=10, pady=5).pack(pady=20)
+    tk.Button(button_center_frame, text="💾 Zapisz bug", command=save_bug,
+              bg="#2196F3", fg="white", padx=10, pady=5).pack()
 
 add_bug_btn = tk.Button(root, text="➕ Dodaj nowy bug", command=open_bug_form, bg="#4CAF50", fg="white", padx=10, pady=5)
 add_bug_btn.pack(pady=10)
