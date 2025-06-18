@@ -27,8 +27,57 @@ notebook.add(tab_in_progress, text="🛠️ W trakcie")
 notebook.add(tab_done, text="✅ Zakończone")
 
 # ====== Placeholder: lista bugów ======
-bug_list_label = tk.Label(tab_all, text="(Tutaj pojawi się lista zgłoszonych bugów)", fg="gray")
-bug_list_label.pack(pady=20)
+def show_bug_details(bug):
+    detail_window = tk.Toplevel(root)
+    detail_window.title(f"📋 Szczegóły - {bug['title']}")
+    detail_window.geometry("600x600")
+
+    text = tk.Text(detail_window, wrap='word', font=("Helvetica", 10))
+    text.pack(fill="both", expand=True, padx=10, pady=10)
+
+    full_text = (
+        f"Tytuł: {bug['title']}\n\n"
+        f"Środowisko:\n{bug['environment']}\n\n"
+        f"Kroki do odtworzenia:\n{bug['steps']}\n\n"
+        f"Oczekiwany rezultat:\n{bug['expected']}\n\n"
+        f"Faktyczny rezultat:\n{bug['actual']}\n\n"
+        f"Ważność: {bug['severity']}\n\n"
+        f"Dodatkowe notatki:\n{bug['notes']}\n\n"
+        f"Status: {bug['status']}"
+    )
+
+    text.insert(tk.END, full_text)
+    text.config(state="disabled")
+
+def load_bugs():
+    for widget in tab_all.winfo_children():
+        widget.destroy()
+
+    if os.path.exists(BUGS_FILE):
+        try:
+            with open(BUGS_FILE, "r", encoding="utf-8") as f:
+                bugs = json.load(f)
+
+            if not bugs:
+                tk.Label(tab_all, text="Brak zgłoszonych bugów", fg="gray").pack(pady=20)
+                return
+
+            for bug in bugs:
+                frame = tk.Frame(tab_all, bd=1, relief="solid", padx=10, pady=5)
+                frame.pack(fill='x', padx=10, pady=5)
+
+                title = tk.Label(frame, text=f"🐞 {bug['title']}", font=('Helvetica', 10, 'bold'), anchor='w', cursor="hand2", wraplength=600, justify='left')
+                title.pack(fill='x')
+                title.bind("<Button-1>", lambda e, b=bug: show_bug_details(b))
+
+                info = tk.Label(frame, text=f"Ważność: {bug['severity']} | Status: {bug['status']}", font=('Helvetica', 9), fg="gray", anchor='w')
+                info.pack(fill='x')
+
+        except Exception as e:
+            tk.Label(tab_all, text=f"Błąd przy wczytywaniu bugów: {e}", fg="red").pack(pady=20)
+    else:
+        tk.Label(tab_all, text="Brak pliku z bugami", fg="gray").pack(pady=20)
+
 
 # ====== Przycisk dodawania nowego buga ======
 def open_bug_form():
@@ -125,6 +174,7 @@ def open_bug_form():
             print("✅ Nowy bug zapisany:", bug_data)
 
             # Zamknij formularz
+            load_bugs()
             top.destroy()
 
         except Exception as e:
@@ -139,4 +189,5 @@ add_bug_btn = tk.Button(root, text="➕ Dodaj nowy bug", command=open_bug_form, 
 add_bug_btn.pack(pady=10)
 
 # ====== Uruchomienie ======
+load_bugs()
 root.mainloop()
