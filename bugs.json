@@ -8,5 +8,18 @@
     "severity": "Kosmetyczny",
     "notes": "Rocks at lower elevations appear correctly placed. However, when viewed from above (near the mountain ridge), several rocks become visibly detached from the surface and exhibit clipping or floating behavior.\nGraphic settings: Ultra preset, no mods installed",
     "status": "Zakończone"
+  },
+  {
+    "title": "Fathis Ules does not offer bartering option after heroes promotion in thieves guild \n ",
+    "environment": "Wersja gry: v0.411.140.0\nPlatforma: PC / Windows 11 / Steam\nUrządzenie: NVIDIA GTX 3060, 32GB RAM\nPołączenie internetowe: Stable WiFi",
+    "steps": "1. launch game \n2. Reach master thief rank or higher in thieves guild \n3. Receive confirmation from Gray Fox that Fathis Ules is your new fence\n4. Travel to imperial city and locate Fathis Ules\n5. Initiate conversation with him",
+    "expected": "Fathis Ules should recognize the player’s Thieves Guild status and allow bartering through the fence system. A “Barter” dialogue option should be available.",
+    "actual": "Although Fathis Ules confirm his role as the Thieves Guild fence, the Barter option is not available making it impossible to sell stolen goods to him",
+    "severity": "Krytyczny",
+    "notes": "Waiting in-game time does not trigger the bartering option\nexiting and re-entering the area does not resolve the issue\nno mods or external tools are used",
+    "status": "W trakcie",
+    "screenshots": [
+      "Fathis_Ules_does_not_offer_bartering_option_after_heroes_promotion_in_thieves_guild_1.png"
+    ]
   }
 ]

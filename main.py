@@ -8,7 +8,7 @@ import os
 import shutil
 from datetime import datetime
 
-# ====== NOWOCZESNY MOTYW CIEMNY (VS Code/OpenAI/Cursor style) ======
+# ====== MOTYW ======
 # Kolory główne
 COLORS = {
     # Tło główne
@@ -140,7 +140,7 @@ def show_image_preview(image_path):
         messagebox.showerror("Błąd", f"Nie można wyświetlić obrazu: {e}")
 
 def create_modern_button(parent, text, command, button_type='primary'):
-    """Tworzy nowoczesny przycisk w stylu VS Code"""
+    """Tworzy przycisk z nowoczesnym wyglądem"""
     colors = {
         'primary': {'bg': COLORS['accent_blue'], 'active_bg': COLORS['accent_green']},
         'success': {'bg': COLORS['success'], 'active_bg': COLORS['accent_green']},
@@ -186,7 +186,7 @@ notebook_frame.pack(fill='both', expand=True, padx=STYLES['padding_large'], pady
 
 # Konfiguracja stylu zakładek
 style = ttk.Style()
-style.theme_use('clam')  # Użyj motywu clam dla lepszej kontroli
+style.theme_use('clam')  # Motyw clam dla lepszej kontroli
 
 # Styl dla zakładek
 style.configure('Custom.TNotebook', background=COLORS['bg_primary'], borderwidth=0)
@@ -202,7 +202,7 @@ style.map('Custom.TNotebook.Tab',
 notebook = ttk.Notebook(notebook_frame, style='Custom.TNotebook')
 notebook.pack(expand=1, fill='both')
 
-# Tworzymy trzy zakładki
+# Tworzenie trzech zakładek
 tab_all = tk.Frame(notebook, bg=COLORS['bg_secondary'])
 tab_in_progress = tk.Frame(notebook, bg=COLORS['bg_secondary'])
 tab_done = tk.Frame(notebook, bg=COLORS['bg_secondary'])
@@ -218,7 +218,7 @@ def show_bug_details(bug):
     detail_window.geometry("700x800")
     detail_window.configure(bg=COLORS['bg_primary'])
 
-    # Tworzymy canvas z przewijaniem
+    # Tworzenie canvasu z przewijaniem
     canvas = tk.Canvas(detail_window, bg=COLORS['bg_primary'], highlightthickness=0)
     scrollbar = tk.Scrollbar(detail_window, orient="vertical", command=canvas.yview)
     scrollable_frame = tk.Frame(canvas, bg=COLORS['bg_primary'])
@@ -639,7 +639,7 @@ def open_bug_form():
     top.geometry("700x800")
     top.configure(bg=COLORS['bg_primary'])
 
-    # Tworzymy canvas z przewijaniem
+    # Tworzenie canvasu z przewijaniem
     canvas = tk.Canvas(top, bg=COLORS['bg_primary'], highlightthickness=0)
     scrollbar = tk.Scrollbar(top, orient="vertical", command=canvas.yview)
     scrollable_frame = tk.Frame(canvas, bg=COLORS['bg_primary'])
