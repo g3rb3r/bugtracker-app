@@ -664,6 +664,22 @@ def open_bug_form():
     canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
     canvas.bind('<Configure>', configure_canvas)
 
+    # Informacja o wymaganych polach
+    info_label = tk.Label(scrollable_frame, 
+                         text="* - Pola wymagane | Pola bez gwiazdki są opcjonalne", 
+                         font=STYLES['font_small'], 
+                         fg=COLORS['text_muted'], 
+                         bg=COLORS['bg_primary'])
+    info_label.pack(anchor='w', padx=STYLES['padding_large'], pady=(STYLES['padding_medium'], 0))
+    
+    # Informacja o minimalnych długościach
+    length_info_label = tk.Label(scrollable_frame, 
+                                text="📏 Minimalne długości: Tytuł (5), Środowisko (2), Kroki (20), Oczekiwany/Faktyczny (15), Notatki (10)", 
+                                font=STYLES['font_small'], 
+                                fg=COLORS['text_muted'], 
+                                bg=COLORS['bg_primary'])
+    length_info_label.pack(anchor='w', padx=STYLES['padding_large'], pady=(0, STYLES['padding_medium']))
+
     fields = {}
 
     def create_field(label_text, is_multiline=False):
@@ -684,20 +700,20 @@ def open_bug_form():
         return entry
 
     # Pola formularza
-    fields['title'] = create_field("1. Tytuł błędu:")
+    fields['title'] = create_field("1. Tytuł błędu: *")
 
-    tk.Label(scrollable_frame, text="2. Środowisko:", font=STYLES['font_subheading'], 
+    tk.Label(scrollable_frame, text="2. Środowisko: *", font=STYLES['font_subheading'], 
             anchor='w', bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(anchor='w', padx=STYLES['padding_large'], pady=(STYLES['padding_medium'], 0), fill='x')
-    fields['game_version'] = create_field("Wersja gry:")
-    fields['platform'] = create_field("Platforma:")
-    fields['device'] = create_field("Urządzenie:")
-    fields['internet'] = create_field("Połączenie internetowe:")
+    fields['game_version'] = create_field("Wersja gry: *")
+    fields['platform'] = create_field("Platforma: *")
+    fields['device'] = create_field("Urządzenie: *")
+    fields['internet'] = create_field("Połączenie internetowe: *")
 
-    fields['steps'] = create_field("3. Kroki do odtworzenia błędu:", is_multiline=True)
-    fields['expected'] = create_field("4. Oczekiwany rezultat:", is_multiline=True)
-    fields['actual'] = create_field("5. Faktyczny rezultat:", is_multiline=True)
+    fields['steps'] = create_field("3. Kroki do odtworzenia błędu: *", is_multiline=True)
+    fields['expected'] = create_field("4. Oczekiwany rezultat: *", is_multiline=True)
+    fields['actual'] = create_field("5. Faktyczny rezultat: *", is_multiline=True)
 
-    tk.Label(scrollable_frame, text="6. Ważność błędu:", anchor='w', 
+    tk.Label(scrollable_frame, text="6. Ważność błędu: *", anchor='w', 
             bg=COLORS['bg_primary'], fg=COLORS['text_primary'], 
             font=STYLES['font_body']).pack(anchor='w', padx=STYLES['padding_large'], pady=(STYLES['padding_medium'], 0), fill='x')
     severity_var = tk.StringVar(value="Drobny")
@@ -707,14 +723,14 @@ def open_bug_form():
     severity_dropdown.pack(padx=STYLES['padding_large'], fill='x')
     fields['severity'] = severity_var
 
-    fields['notes'] = create_field("7. Notatki / Dodatkowe informacje:", is_multiline=True)
+    fields['notes'] = create_field("7. Notatki / Dodatkowe informacje (opcjonalne):", is_multiline=True)
 
     # === Sekcja zrzutów ekranu ===
     screenshots_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
     screenshots_frame.pack(fill='x', padx=STYLES['padding_large'], pady=STYLES['padding_medium'])
     
     tk.Label(screenshots_frame, text="8. Zrzuty ekranu (opcjonalne):", font=STYLES['font_subheading'], 
-            anchor='w', bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(anchor='w', fill='x')
+            anchor='w', bg=COLORS['bg_primary'], fg=COLORS['text_secondary']).pack(anchor='w', fill='x')
     
     # Lista wybranych screenshotsów
     selected_screenshots = []
@@ -773,14 +789,92 @@ def open_bug_form():
                 font=STYLES['font_body']).pack(side='left')
 
     def save_bug():
+        # Walidacja wymaganych pól
+        required_fields = {
+            'title': 'Tytuł błędu',
+            'game_version': 'Wersja gry',
+            'platform': 'Platforma',
+            'device': 'Urządzenie',
+            'internet': 'Połączenie internetowe',
+            'steps': 'Kroki do odtworzenia',
+            'expected': 'Oczekiwany rezultat',
+            'actual': 'Faktyczny rezultat'
+        }
+        
+        # Sprawdź czy wszystkie wymagane pola są wypełnione
+        missing_fields = []
+        for field_key, field_name in required_fields.items():
+            if field_key in ['steps', 'expected', 'actual', 'notes']:
+                # Dla pól tekstowych (Text widget)
+                value = fields[field_key].get("1.0", tk.END).strip()
+            else:
+                # Dla pól jednoliniowych (Entry widget)
+                value = fields[field_key].get().strip()
+            
+            if not value:
+                missing_fields.append(field_name)
+        
+        # Jeśli są puste pola, pokaż błąd i przerwij
+        if missing_fields:
+            error_message = "❌ Proszę wypełnić wszystkie wymagane pola:\n\n"
+            error_message += "\n".join(f"• {field}" for field in missing_fields)
+            messagebox.showerror("Błąd walidacji", error_message)
+            return
+        
+        # Walidacja długości pól tekstowych
+        min_lengths = {
+            'title': 5,
+            'game_version': 2,
+            'platform': 2,
+            'device': 2,
+            'internet': 2,
+            'steps': 20,
+            'expected': 15,
+            'actual': 15,
+            'notes': 10  # Minimum dla notatek (jeśli są wypełnione)
+        }
+        
+        # Sprawdź czy pola środowiska nie są zbyt krótkie
+        environment_fields = ['game_version', 'platform', 'device', 'internet']
+        for field_key in environment_fields:
+            value = fields[field_key].get().strip()
+            if len(value) < 2:
+                messagebox.showerror("Błąd walidacji", f"❌ Pole '{required_fields[field_key]}' musi mieć co najmniej 2 znaki")
+                return
+        
+        # Sprawdź czy wybrano ważność
+        if not fields['severity'].get():
+            messagebox.showerror("Błąd walidacji", "❌ Proszę wybrać ważność błędu")
+            return
+        
+        short_fields = []
+        for field_key, min_length in min_lengths.items():
+            if field_key in ['steps', 'expected', 'actual', 'notes']:
+                value = fields[field_key].get("1.0", tk.END).strip()
+            else:
+                value = fields[field_key].get().strip()
+            
+            # Dla notatek sprawdź długość tylko jeśli są wypełnione
+            if field_key == 'notes' and not value:
+                continue
+                
+            if len(value) < min_length:
+                short_fields.append(f"{required_fields.get(field_key, field_key)} (minimum {min_length} znaków)")
+        
+        if short_fields:
+            error_message = "❌ Niektóre pola są zbyt krótkie:\n\n"
+            error_message += "\n".join(f"• {field}" for field in short_fields)
+            messagebox.showerror("Błąd walidacji", error_message)
+            return
+        
         try:
             bug_data = {
-                "title": fields['title'].get(),
+                "title": fields['title'].get().strip(),
                 "environment": (
-                    f"Wersja gry: {fields['game_version'].get()}\n"
-                    f"Platforma: {fields['platform'].get()}\n"
-                    f"Urządzenie: {fields['device'].get()}\n"
-                    f"Połączenie internetowe: {fields['internet'].get()}"
+                    f"Wersja gry: {fields['game_version'].get().strip()}\n"
+                    f"Platforma: {fields['platform'].get().strip()}\n"
+                    f"Urządzenie: {fields['device'].get().strip()}\n"
+                    f"Połączenie internetowe: {fields['internet'].get().strip()}"
                 ),
                 "steps": fields['steps'].get("1.0", tk.END).strip(),
                 "expected": fields['expected'].get("1.0", tk.END).strip(),
