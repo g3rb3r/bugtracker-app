@@ -1,6 +1,6 @@
 # 🎮 Bug Tracker - QA Panel
 
-An application for managing game bug reports, created for QA teams.
+An application for managing game bug reports, created for learning QA methodology.
 
 ## ✨ Features
 
