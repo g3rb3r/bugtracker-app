@@ -1,140 +1,140 @@
-# 🎮 Bug Tracker - Panel QA
+# 🎮 Bug Tracker - QA Panel
 
-Aplikacja do zarządzania zgłoszeniami błędów w grach, stworzona dla zespołów QA.
+An application for managing game bug reports, created for QA teams.
 
-## ✨ Funkcje
+## ✨ Features
 
-### 📋 Zarządzanie bugami
-- **Dodawanie nowych bugów** z pełnym formularzem
-- **Przeglądanie bugów** w trzech kategoriach: Wszystkie, W trakcie, Zakończone
-- **Edycja istniejących bugów** z możliwością aktualizacji wszystkich pól
-- **Usuwanie bugów** z potwierdzeniem
+### 📋 Bug Management
+- **Add new bugs** using a complete form
+- **Browse bugs** in three categories: All, In Progress, Completed
+- **Edit existing bugs** with support for updating all fields
+- **Delete bugs** with confirmation
 
-### 📸 Funkcjonalność screenshotsów
-- **Dodawanie screenshotsów** do zgłoszeń (opcjonalne)
-- **Automatyczne zapisywanie** w folderze `screenshots/`
-- **Inteligentne nazewnictwo** plików: `tytuł_buga_1.png`, `tytuł_buga_2.png`, itd.
-- **Podgląd miniatur** w oknie szczegółów buga
-- **Powiększanie screenshotsów** po kliknięciu w miniaturę
-- **Obsługa wielu formatów**: PNG, JPG, JPEG, GIF, BMP
+### 📸 Screenshot Functionality
+- **Attach screenshots** to reports (optional)
+- **Automatically save files** in the `screenshots/` folder
+- **Smart file naming**: `bug_title_1.png`, `bug_title_2.png`, etc.
+- **Thumbnail previews** in the bug details window
+- **Click-to-zoom screenshots** from thumbnails
+- **Multiple supported formats**: PNG, JPG, JPEG, GIF, BMP
 
-### 🎨 Responsywny interfejs
-- **Elastyczne okna** dostosowujące się do rozmiaru ekranu
-- **Intuicyjny design** z kolorowymi przyciskami i ikonami
-- **Przewijanie** w długich formularzach
+### 🎨 Responsive Interface
+- **Flexible windows** that adapt to screen size
+- **Intuitive design** with colorful buttons and icons
+- **Scrolling support** in long forms
 
-## 🚀 Instalacja i uruchomienie
+## 🚀 Installation and Run
 
-### Wymagania
+### Requirements
 - Python 3.6+
-- Biblioteka PIL (Pillow)
+- PIL library (Pillow)
 
-### Instalacja zależności
+### Install dependencies
 ```bash
 pip install Pillow
 ```
 
-### Uruchomienie
+### Run the app
 ```bash
 python main.py
 ```
 
-## 📁 Struktura plików
+## 📁 Project Structure
 
 ```
 bugtracker_app/
-├── main.py              # Główny plik aplikacji
-├── bugs.json            # Baza danych bugów
-├── screenshots/         # Folder na screenshotsy
-├── assets/             # Zasoby aplikacji
-└── README.md           # Ten plik
+├── main.py              # Main application file
+├── bugs.json            # Bug database
+├── screenshots/         # Folder for screenshots
+├── assets/              # App assets
+└── README.md            # This file
 ```
 
-## 💡 Jak używać
+## 💡 How to Use
 
-### Dodawanie nowego buga
-1. Kliknij przycisk **"➕ Dodaj nowy bug"**
-2. Wypełnij wszystkie wymagane pola:
-   - Tytuł błędu
-   - Informacje o środowisku (wersja gry, platforma, urządzenie, połączenie)
-   - Kroki do odtworzenia
-   - Oczekiwany i faktyczny rezultat
-   - Ważność błędu
-   - Notatki
-3. **Opcjonalnie**: Dodaj screenshotsy klikając **"📷 Dodaj screenshot"**
-4. Kliknij **"💾 Zapisz bug"**
+### Add a New Bug
+1. Click **"➕ Add new bug"**
+2. Fill in all required fields:
+   - Bug title
+   - Environment details (game version, platform, device, connection)
+   - Reproduction steps
+   - Expected and actual result
+   - Bug severity
+   - Notes
+3. **Optional**: Add screenshots by clicking **"📷 Add screenshot"**
+4. Click **"💾 Save bug"**
 
-### Przeglądanie i edycja bugów
-1. Kliknij na tytuł buga w liście
-2. W oknie szczegółów możesz:
-   - **Przeglądać** wszystkie informacje
-   - **Oglądać screenshotsy** jako miniatury
-   - **Kliknąć na miniaturę** aby powiększyć screenshot
-   - **Kliknąć "✏️ Edytuj raport"** aby włączyć tryb edycji
-   - **Zmienić status** w trybie edycji
-   - **Zapisać zmiany** lub **anulować edycję**
+### Browse and Edit Bugs
+1. Click a bug title from the list
+2. In the details window, you can:
+   - **View** all report information
+   - **See screenshots** as thumbnails
+   - **Click a thumbnail** to enlarge a screenshot
+   - **Click "✏️ Edit report"** to enable edit mode
+   - **Change status** in edit mode
+   - **Save changes** or **cancel editing**
 
-### Zarządzanie screenshotsami
-- **Dodawanie**: Wybierz plik obrazu w formularzu
-- **Usuwanie**: Kliknij ❌ obok nazwy pliku
-- **Podgląd**: Kliknij na miniaturę w oknie szczegółów
-- **Automatyczne nazewnictwo**: Pliki są zapisywane jako `tytuł_buga_1.png`, `tytuł_buga_2.png`, itd.
+### Manage Screenshots
+- **Add**: Choose an image file in the form
+- **Remove**: Click ❌ next to the file name
+- **Preview**: Click a thumbnail in the details window
+- **Auto naming**: Files are saved as `bug_title_1.png`, `bug_title_2.png`, etc.
 
-## 🔧 Konfiguracja
+## 🔧 Configuration
 
-### Obsługiwane formaty obrazów
-- PNG (zalecane)
+### Supported image formats
+- PNG (recommended)
 - JPG/JPEG
 - GIF
 - BMP
 
-### Maksymalny rozmiar miniatur
-- Domyślnie: 80x80 pikseli
-- Podgląd: Dostosowany do rozmiaru ekranu
+### Maximum thumbnail size
+- Default: 80x80 pixels
+- Preview: Automatically adjusted to screen size
 
-## 🐛 Rozwiązywanie problemów
+## 🐛 Troubleshooting
 
-### Błąd "Nie można wyświetlić obrazu"
-- Sprawdź czy plik obrazu nie jest uszkodzony
-- Upewnij się, że format jest obsługiwany
+### Error: "Cannot display image"
+- Check whether the image file is not corrupted
+- Make sure the format is supported
 
-### Screenshotsy nie są widoczne
-- Sprawdź czy folder `screenshots/` istnieje
-- Upewnij się, że pliki zostały poprawnie skopiowane
+### Screenshots are not visible
+- Check whether the `screenshots/` folder exists
+- Make sure files were copied correctly
 
-### Błąd przy zapisie
-- Sprawdź uprawnienia do zapisu w folderze aplikacji
-- Upewnij się, że `bugs.json` nie jest używany przez inną aplikację
+### Save error
+- Check write permissions in the application folder
+- Make sure `bugs.json` is not being used by another application
 
-## 📝 Format danych
+## 📝 Data Format
 
-Bugi są zapisywane w pliku `bugs.json` w formacie JSON:
+Bugs are stored in `bugs.json` using JSON format:
 
 ```json
 {
-  "title": "Tytuł błędu",
-  "environment": "Informacje o środowisku",
-  "steps": "Kroki do odtworzenia",
-  "expected": "Oczekiwany rezultat",
-  "actual": "Faktyczny rezultat",
-  "severity": "Ważność",
-  "notes": "Notatki",
+  "title": "Bug title",
+  "environment": "Environment information",
+  "steps": "Reproduction steps",
+  "expected": "Expected result",
+  "actual": "Actual result",
+  "severity": "Severity",
+  "notes": "Notes",
   "status": "Status",
-  "screenshots": ["plik1.png", "plik2.png"]
+  "screenshots": ["file1.png", "file2.png"]
 }
 ```
 
-## 🎯 Funkcje w planach
+## 🎯 Planned Features
 
-- [ ] Eksport raportów do PDF
-- [ ] Filtrowanie po ważności
-- [ ] Wyszukiwanie w treści bugów
-- [ ] Statystyki i wykresy
-- [ ] Integracja z systemami śledzenia bugów
+- [ ] Export reports to PDF
+- [ ] Filter by severity
+- [ ] Search within bug content
+- [ ] Statistics and charts
+- [ ] Integration with bug tracking systems
 
 ---
 
-**Autor**: Maja Gebler 
-**Wersja**: 1.0  
-**Data**: 2024
+**Author**: Maja Gebler  
+**Version**: 1.0  
+**Date**: 2024
 
