@@ -6,6 +6,8 @@ from PIL import Image, ImageTk
 import json
 import os
 import shutil
+import subprocess
+import sys
 from datetime import datetime
 
 # ====== MOTYW ======
@@ -55,6 +57,15 @@ STYLES = {
 
 BUGS_FILE = "bugs.json"
 SCREENSHOTS_DIR = "screenshots"
+VIDEO_EXTENSIONS = frozenset({
+    ".mp4", ".webm", ".mov", ".mkv", ".avi", ".wmv", ".m4v", ".mpeg", ".mpg",
+})
+MEDIA_FILE_TYPES = [
+    ("Images and video", "*.png *.jpg *.jpeg *.gif *.bmp *.webp *.mp4 *.webm *.mov *.mkv *.avi *.wmv *.m4v"),
+    ("Images", "*.png *.jpg *.jpeg *.gif *.bmp *.webp"),
+    ("Video", "*.mp4 *.webm *.mov *.mkv *.avi *.wmv *.m4v *.mpeg *.mpg"),
+    ("All files", "*.*"),
+]
 GAME_FILTER_ALL = "All games"
 GAME_FILTER_NO_TITLE = "(No game title)"
 STATUS_MAP = {
@@ -68,20 +79,44 @@ def normalize_status(status):
     """Converts legacy Polish statuses to English equivalents."""
     return STATUS_MAP.get(status, status or "In Progress")
 
-# Funkcje pomocnicze do obsługi screenshotsów
-def get_screenshot_filename(bug_title, index):
-    """Generuje nazwę pliku dla screenshotu"""
-    # Usuń znaki specjalne z tytułu
+# Funkcje pomocnicze do obsługi załączników (obrazy + wideo)
+def is_video_file(path):
+    return os.path.splitext(path)[1].lower() in VIDEO_EXTENSIONS
+
+
+def open_attachment_external(abs_path):
+    """Otwiera plik w domyślnej aplikacji systemu (np. odtwarzacz wideo)."""
+    abs_path = os.path.normpath(os.path.abspath(abs_path))
+    if not os.path.isfile(abs_path):
+        messagebox.showerror("Error", "File not found.")
+        return
+    try:
+        if sys.platform == "win32":
+            os.startfile(abs_path)
+        elif sys.platform == "darwin":
+            subprocess.run(["open", abs_path], check=False)
+        else:
+            subprocess.run(["xdg-open", abs_path], check=False)
+    except Exception as e:
+        messagebox.showerror("Error", f"Could not open file: {e}")
+
+
+def get_attachment_filename(bug_title, index, source_path):
+    """Nazwa pliku w folderze screenshots — zachowuje rozszerzenie źródła (wideo/obraz)."""
     safe_title = "".join(c for c in bug_title if c.isalnum() or c in (' ', '-', '_')).rstrip()
-    safe_title = safe_title.replace(' ', '_')
-    return f"{safe_title}_{index}.png"
+    safe_title = safe_title.replace(' ', '_') or "attachment"
+    ext = os.path.splitext(source_path)[1].lower()
+    if not ext:
+        ext = ".png"
+    return f"{safe_title}_{index}{ext}"
+
 
 def copy_screenshot_to_folder(source_path, bug_title, index):
-    """Kopiuje screenshot do folderu screenshots z odpowiednią nazwą"""
+    """Kopiuje załącznik do folderu screenshots z unikalną nazwą."""
     if not os.path.exists(SCREENSHOTS_DIR):
         os.makedirs(SCREENSHOTS_DIR)
-    
-    filename = get_screenshot_filename(bug_title, index)
+
+    filename = get_attachment_filename(bug_title, index, source_path)
     destination = os.path.join(SCREENSHOTS_DIR, filename)
     
     try:
@@ -282,8 +317,14 @@ def show_bug_details(bug):
     read_only_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
     read_only_frame.pack(fill='x', padx=STYLES['padding_large'], pady=STYLES['padding_medium'])
 
-    tk.Label(read_only_frame, text=f"Title: {bug['title']}", font=STYLES['font_subheading'], 
+    tk.Label(read_only_frame, text="Bug title:", font=STYLES['font_subheading'],
             bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(anchor='w', fill='x')
+    title_entry = tk.Entry(read_only_frame, bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'],
+                           insertbackground=COLORS['text_primary'], relief='flat',
+                           font=STYLES['font_body'])
+    title_entry.insert(0, bug['title'])
+    title_entry.config(state='readonly')
+    title_entry.pack(fill='x', pady=(STYLES['padding_small'], STYLES['padding_medium']))
     _game_title = (bug.get('game_title') or '').strip()
     tk.Label(read_only_frame, text=f"Game title: {_game_title or '—'}", font=STYLES['font_body'], 
             bg=COLORS['bg_primary'], fg=COLORS['text_secondary']).pack(anchor='w', fill='x')
@@ -352,7 +393,7 @@ def show_bug_details(bug):
         screenshots_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
         screenshots_frame.pack(fill='x', padx=STYLES['padding_large'], pady=STYLES['padding_medium'])
         
-        tk.Label(screenshots_frame, text="Screenshots:", font=STYLES['font_subheading'], 
+        tk.Label(screenshots_frame, text="Screenshots & video:", font=STYLES['font_subheading'],
                 bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(anchor='w', fill='x')
         
         # Kontener na miniatury
@@ -362,24 +403,44 @@ def show_bug_details(bug):
         for i, screenshot_filename in enumerate(bug['screenshots']):
             screenshot_path = get_screenshot_path(screenshot_filename)
             if os.path.exists(screenshot_path):
-                # Utwórz miniaturę
-                thumbnail = create_thumbnail(screenshot_path, (80, 80))
-                if thumbnail:
-                    # Kontener na miniaturę
-                    thumb_container = tk.Frame(thumbnails_frame, relief="solid", bd=1, 
+                thumb_container = tk.Frame(thumbnails_frame, relief="solid", bd=1,
                                              bg=COLORS['bg_tertiary'], highlightbackground=COLORS['border'])
-                    thumb_container.pack(side='left', padx=5, pady=5)
-                    
-                    # Miniatura z możliwością kliknięcia
-                    thumb_label = tk.Label(thumb_container, image=thumbnail, cursor="hand2",
-                                         bg=COLORS['bg_tertiary'])
-                    thumb_label.image = thumbnail  # Zachowaj referencję
-                    thumb_label.pack(padx=5, pady=5)
-                    thumb_label.bind("<Button-1>", lambda e, path=screenshot_path: show_image_preview(path))
-                    
-                    # Numer screenshotu
-                    tk.Label(thumb_container, text=f"#{i+1}", font=STYLES['font_small'], 
-                            fg=COLORS['text_muted'], bg=COLORS['bg_tertiary']).pack()
+                thumb_container.pack(side='left', padx=5, pady=5)
+
+                if is_video_file(screenshot_path):
+                    tk.Label(thumb_container, text="🎬", font=('Segoe UI', 28),
+                             bg=COLORS['bg_tertiary'], fg=COLORS['text_primary']).pack(padx=5, pady=(5, 0))
+                    short_name = screenshot_filename
+                    if len(short_name) > 18:
+                        short_name = short_name[:15] + "…"
+                    tk.Label(thumb_container, text=short_name, font=STYLES['font_small'],
+                             fg=COLORS['text_muted'], bg=COLORS['bg_tertiary'], wraplength=90).pack()
+                    play_btn = tk.Button(thumb_container, text="Play", cursor="hand2",
+                                         bg=COLORS['accent_blue'], fg=COLORS['text_primary'],
+                                         font=STYLES['font_small'], relief='flat',
+                                         command=lambda p=screenshot_path: open_attachment_external(p))
+                    play_btn.pack(padx=4, pady=4)
+                    tk.Label(thumb_container, text=f"#{i+1}", font=STYLES['font_small'],
+                             fg=COLORS['text_muted'], bg=COLORS['bg_tertiary']).pack()
+                else:
+                    thumbnail = create_thumbnail(screenshot_path, (80, 80))
+                    if thumbnail:
+                        thumb_label = tk.Label(thumb_container, image=thumbnail, cursor="hand2",
+                                               bg=COLORS['bg_tertiary'])
+                        thumb_label.image = thumbnail
+                        thumb_label.pack(padx=5, pady=5)
+                        thumb_label.bind("<Button-1>", lambda e, path=screenshot_path: show_image_preview(path))
+                        tk.Label(thumb_container, text=f"#{i+1}", font=STYLES['font_small'],
+                                 fg=COLORS['text_muted'], bg=COLORS['bg_tertiary']).pack()
+                    else:
+                        tk.Label(thumb_container, text="📎", font=('Segoe UI', 24),
+                                 bg=COLORS['bg_tertiary'], fg=COLORS['text_secondary']).pack(padx=5, pady=5)
+                        tk.Button(thumb_container, text="Open", cursor="hand2",
+                                  bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'],
+                                  font=STYLES['font_small'], relief='flat',
+                                  command=lambda p=screenshot_path: open_attachment_external(p)).pack(padx=4, pady=4)
+                        tk.Label(thumb_container, text=f"#{i+1}", font=STYLES['font_small'],
+                                 fg=COLORS['text_muted'], bg=COLORS['bg_tertiary']).pack()
             else:
                 # Jeśli plik nie istnieje, pokaż informację
                 tk.Label(thumbnails_frame, text=f"❌ Missing file: {screenshot_filename}", 
@@ -391,7 +452,7 @@ def show_bug_details(bug):
     edit_screenshots_frame.pack(fill='x', padx=STYLES['padding_large'], pady=STYLES['padding_medium'])
     
     # Nagłówek sekcji edycji zrzutów ekranu
-    edit_screenshots_header = tk.Label(edit_screenshots_frame, text="Add new screenshots:", 
+    edit_screenshots_header = tk.Label(edit_screenshots_frame, text="Add screenshots or video:",
                                       font=STYLES['font_subheading'], anchor='w',
                                       bg=COLORS['bg_primary'], fg=COLORS['text_primary'])
     edit_screenshots_header.pack(anchor='w', fill='x')
@@ -403,11 +464,8 @@ def show_bug_details(bug):
     
     def add_new_screenshot():
         file_path = filedialog.askopenfilename(
-            title="Wybierz zrzut ekranu",
-            filetypes=[
-                ("Obrazy", "*.png *.jpg *.jpeg *.gif *.bmp"),
-                ("Wszystkie pliki", "*.*")
-            ]
+            title="Choose image or video",
+            filetypes=MEDIA_FILE_TYPES,
         )
         if file_path:
             new_screenshots.append(file_path)
@@ -431,7 +489,8 @@ def show_bug_details(bug):
             
             # Nazwa pliku
             filename = os.path.basename(screenshot_path)
-            tk.Label(screenshot_frame, text=f"📷 {filename}", anchor='w',
+            icon = "🎬" if is_video_file(screenshot_path) else "📷"
+            tk.Label(screenshot_frame, text=f"{icon} {filename}", anchor='w',
                     bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'],
                     font=STYLES['font_body']).pack(side='left', padx=5, pady=2, fill='x', expand=True)
             
@@ -442,7 +501,7 @@ def show_bug_details(bug):
         
         # Aktualizuj label z liczbą zrzutów
         if new_screenshots:
-            new_screenshots_label.config(text=f"New: {len(new_screenshots)} screenshots")
+            new_screenshots_label.config(text=f"New: {len(new_screenshots)} file(s)")
         else:
             new_screenshots_label.config(text="")
     
@@ -450,7 +509,8 @@ def show_bug_details(bug):
     edit_screenshots_buttons_frame = tk.Frame(edit_screenshots_frame, bg=COLORS['bg_primary'])
     edit_screenshots_buttons_frame.pack(fill='x', pady=STYLES['padding_small'])
     
-    edit_add_screenshot_btn = create_modern_button(edit_screenshots_buttons_frame, "📷 Add screenshot", add_new_screenshot, 'warning')
+    edit_add_screenshot_btn = create_modern_button(
+        edit_screenshots_buttons_frame, "📎 Add media", add_new_screenshot, 'warning')
     edit_add_screenshot_btn.pack(side='left', padx=(0, STYLES['padding_medium']))
     
     # Label do wyświetlania liczby nowych zrzutów
@@ -487,6 +547,7 @@ def show_bug_details(bug):
         nonlocal edit_mode
         if not edit_mode:
             # Włącz tryb edycji
+            title_entry.config(state='normal')
             steps_text.config(state='normal')
             expected_text.config(state='normal')
             actual_text.config(state='normal')
@@ -503,6 +564,10 @@ def show_bug_details(bug):
             save_button.pack(side='left', padx=STYLES['padding_small'])
         else:
             # Wyłącz tryb edycji
+            title_entry.config(state='normal')
+            title_entry.delete(0, tk.END)
+            title_entry.insert(0, bug['title'])
+            title_entry.config(state='readonly')
             steps_text.config(state='disabled')
             expected_text.config(state='disabled')
             actual_text.config(state='disabled')
@@ -542,37 +607,63 @@ def show_bug_details(bug):
 
     def save_changes():
         try:
+            new_title = title_entry.get().strip()
+            if not new_title:
+                messagebox.showerror("Validation error", "Bug title cannot be empty.")
+                return
+            if len(new_title) < 5:
+                messagebox.showerror("Validation error", "Bug title must be at least 5 characters.")
+                return
+
             # Wczytaj wszystkie bugi
             with open(BUGS_FILE, "r", encoding="utf-8") as f:
                 bugs = json.load(f)
                 for b in bugs:
                     b['status'] = normalize_status(b.get('status'))
             # Znajdź i zaktualizuj
+            matched_bug = None
             for b in bugs:
                 if (b['title'] == bug['title'] and b['environment'] == bug['environment']
                         and b.get('game_title', '') == bug.get('game_title', '')):
+                    matched_bug = b
+                    b['title'] = new_title
                     b['status'] = status_var.get()
                     b['steps'] = steps_text.get("1.0", tk.END).strip()
                     b['expected'] = expected_text.get("1.0", tk.END).strip()
                     b['actual'] = actual_text.get("1.0", tk.END).strip()
                     b['notes'] = notes_text.get("1.0", tk.END).strip()
-                    # Dodaj nowe zrzuty ekranu do istniejących
                     if new_screenshots:
-                        bug_title = bug['title']
                         existing_count = len(b.get('screenshots', []))
                         for i, screenshot_path in enumerate(new_screenshots):
-                            filename = copy_screenshot_to_folder(screenshot_path, bug_title, existing_count + i + 1)
+                            filename = copy_screenshot_to_folder(
+                                screenshot_path, new_title, existing_count + i + 1)
                             if filename:
                                 if 'screenshots' not in b:
                                     b['screenshots'] = []
                                 b['screenshots'].append(filename)
                     break
+
+            if matched_bug is None:
+                messagebox.showerror("Error", "Report not found in data file.")
+                return
+
             # Zapisz ponownie
             with open(BUGS_FILE, "w", encoding="utf-8") as f:
                 json.dump(bugs, f, indent=2, ensure_ascii=False)
+
+            bug['title'] = new_title
+            bug['status'] = matched_bug['status']
+            bug['steps'] = matched_bug['steps']
+            bug['expected'] = matched_bug['expected']
+            bug['actual'] = matched_bug['actual']
+            bug['notes'] = matched_bug['notes']
+            if new_screenshots:
+                bug['screenshots'] = matched_bug['screenshots']
+
+            detail_window.title(f"📋 Details - {bug['title']}")
             print(f"✅ Zapisano zmiany: {bug['title']}")
             if new_screenshots:
-                print(f"📷 Added {len(new_screenshots)} new screenshots")
+                print(f"📎 Added {len(new_screenshots)} new attachment(s)")
             # Po zapisaniu wróć do trybu podglądu, nie zamykaj okna
             toggle_edit_mode()
             load_bugs()  # odśwież listę bugów w głównym oknie
@@ -823,7 +914,7 @@ def open_bug_form():
     screenshots_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
     screenshots_frame.pack(fill='x', padx=STYLES['padding_large'], pady=STYLES['padding_medium'])
     
-    tk.Label(screenshots_frame, text="9. Screenshots (optional):", font=STYLES['font_subheading'], 
+    tk.Label(screenshots_frame, text="9. Screenshots & video (optional):", font=STYLES['font_subheading'],
             anchor='w', bg=COLORS['bg_primary'], fg=COLORS['text_secondary']).pack(anchor='w', fill='x')
     
     # Lista wybranych screenshotsów
@@ -833,11 +924,8 @@ def open_bug_form():
     
     def add_screenshot():
         file_path = filedialog.askopenfilename(
-            title="Wybierz screenshot",
-            filetypes=[
-                ("Obrazy", "*.png *.jpg *.jpeg *.gif *.bmp"),
-                ("Wszystkie pliki", "*.*")
-            ]
+            title="Choose image or video",
+            filetypes=MEDIA_FILE_TYPES,
         )
         if file_path:
             selected_screenshots.append(file_path)
@@ -861,7 +949,8 @@ def open_bug_form():
             
             # Nazwa pliku
             filename = os.path.basename(screenshot_path)
-            tk.Label(screenshot_frame, text=f"📷 {filename}", anchor='w', 
+            icon = "🎬" if is_video_file(screenshot_path) else "📷"
+            tk.Label(screenshot_frame, text=f"{icon} {filename}", anchor='w',
                     bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'],
                     font=STYLES['font_body']).pack(side='left', padx=5, pady=2, fill='x', expand=True)
             
@@ -874,11 +963,11 @@ def open_bug_form():
     screenshots_buttons_frame = tk.Frame(screenshots_frame, bg=COLORS['bg_primary'])
     screenshots_buttons_frame.pack(fill='x', pady=STYLES['padding_small'])
     
-    add_screenshot_btn = create_modern_button(screenshots_buttons_frame, "📷 Add screenshot", add_screenshot, 'warning')
+    add_screenshot_btn = create_modern_button(screenshots_buttons_frame, "📎 Add media", add_screenshot, 'warning')
     add_screenshot_btn.pack(side='left', padx=(0, STYLES['padding_medium']))
     
     if selected_screenshots:
-        tk.Label(screenshots_buttons_frame, text=f"Selected: {len(selected_screenshots)} screenshots", 
+        tk.Label(screenshots_buttons_frame, text=f"Selected: {len(selected_screenshots)} file(s)",
                 fg=COLORS['text_secondary'], bg=COLORS['bg_primary'],
                 font=STYLES['font_body']).pack(side='left')
 
@@ -1006,7 +1095,7 @@ def open_bug_form():
             # Informacja o sukcesie
             print("✅ New bug saved:", bug_data)
             if bug_data["screenshots"]:
-                print(f"📷 Saved {len(bug_data['screenshots'])} screenshots")
+                print(f"📎 Saved {len(bug_data['screenshots'])} attachment(s)")
 
             # Zamknij formularz
             load_bugs()
