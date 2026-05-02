@@ -319,9 +319,20 @@ def show_bug_details(bug):
 
     tk.Label(read_only_frame, text="Bug title:", font=STYLES['font_subheading'],
             bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(anchor='w', fill='x')
-    title_entry = tk.Entry(read_only_frame, bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'],
-                           insertbackground=COLORS['text_primary'], relief='flat',
-                           font=STYLES['font_body'])
+    title_entry = tk.Entry(
+        read_only_frame,
+        bg=COLORS['bg_tertiary'],
+        fg=COLORS['text_primary'],
+        readonlybackground=COLORS['bg_tertiary'],
+        disabledbackground=COLORS['bg_tertiary'],
+        disabledforeground=COLORS['text_primary'],
+        insertbackground=COLORS['text_primary'],
+        relief='flat',
+        highlightthickness=1,
+        highlightbackground=COLORS['border'],
+        highlightcolor=COLORS['accent_blue'],
+        font=STYLES['font_body'],
+    )
     title_entry.insert(0, bug['title'])
     title_entry.config(state='readonly')
     title_entry.pack(fill='x', pady=(STYLES['padding_small'], STYLES['padding_medium']))
