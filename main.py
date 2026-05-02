@@ -55,6 +55,8 @@ STYLES = {
 
 BUGS_FILE = "bugs.json"
 SCREENSHOTS_DIR = "screenshots"
+GAME_FILTER_ALL = "All games"
+GAME_FILTER_NO_TITLE = "(No game title)"
 STATUS_MAP = {
     "W trakcie": "In Progress",
     "Zakończone": "Completed",
@@ -190,6 +192,17 @@ subtitle = tk.Label(header_frame, text="QA Panel - Bug Management", font=STYLES[
                    bg=COLORS['bg_primary'], fg=COLORS['text_secondary'])
 subtitle.pack(side='left', padx=(STYLES['padding_medium'], 0), pady=(5, 0))
 
+# ====== Filtr po tytule gry ======
+game_filter_var = tk.StringVar(value=GAME_FILTER_ALL)
+filter_bar = tk.Frame(root, bg=COLORS['bg_primary'])
+filter_bar.pack(fill='x', padx=STYLES['padding_large'], pady=(0, STYLES['padding_small']))
+
+tk.Label(filter_bar, text="Filter by game:", font=STYLES['font_body'],
+         bg=COLORS['bg_primary'], fg=COLORS['text_secondary']).pack(side='left', padx=(0, STYLES['padding_small']))
+
+game_filter_combo = ttk.Combobox(filter_bar, textvariable=game_filter_var, state='readonly', width=48)
+game_filter_combo.pack(side='left', fill='x', expand=True)
+
 # ====== Zakładki (filtry statusów) ======
 notebook_frame = tk.Frame(root, bg=COLORS['bg_primary'])
 notebook_frame.pack(fill='both', expand=True, padx=STYLES['padding_large'], pady=STYLES['padding_small'])
@@ -208,6 +221,18 @@ style.configure('Custom.TNotebook.Tab',
 style.map('Custom.TNotebook.Tab',
           background=[('selected', COLORS['accent_blue']), ('active', COLORS['bg_tertiary'])],
           foreground=[('selected', COLORS['text_primary']), ('active', COLORS['text_primary'])])
+
+style.configure('GameFilter.TCombobox',
+                fieldbackground=COLORS['bg_tertiary'],
+                background=COLORS['bg_secondary'],
+                foreground=COLORS['text_primary'],
+                arrowcolor=COLORS['text_primary'])
+style.map('GameFilter.TCombobox',
+          fieldbackground=[('readonly', COLORS['bg_tertiary'])],
+          selectbackground=[('readonly', COLORS['accent_blue'])],
+          selectforeground=[('readonly', COLORS['text_primary'])])
+
+game_filter_combo.configure(style='GameFilter.TCombobox')
 
 notebook = ttk.Notebook(notebook_frame, style='Custom.TNotebook')
 notebook.pack(expand=1, fill='both')
@@ -259,6 +284,9 @@ def show_bug_details(bug):
 
     tk.Label(read_only_frame, text=f"Title: {bug['title']}", font=STYLES['font_subheading'], 
             bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(anchor='w', fill='x')
+    _game_title = (bug.get('game_title') or '').strip()
+    tk.Label(read_only_frame, text=f"Game title: {_game_title or '—'}", font=STYLES['font_body'], 
+            bg=COLORS['bg_primary'], fg=COLORS['text_secondary']).pack(anchor='w', fill='x')
     tk.Label(read_only_frame, text=f"Severity: {bug['severity']}", font=STYLES['font_body'], 
             bg=COLORS['bg_primary'], fg=COLORS['text_secondary']).pack(anchor='w', fill='x')
     
@@ -521,7 +549,8 @@ def show_bug_details(bug):
                     b['status'] = normalize_status(b.get('status'))
             # Znajdź i zaktualizuj
             for b in bugs:
-                if b['title'] == bug['title'] and b['environment'] == bug['environment']:
+                if (b['title'] == bug['title'] and b['environment'] == bug['environment']
+                        and b.get('game_title', '') == bug.get('game_title', '')):
                     b['status'] = status_var.get()
                     b['steps'] = steps_text.get("1.0", tk.END).strip()
                     b['expected'] = expected_text.get("1.0", tk.END).strip()
@@ -571,7 +600,10 @@ def show_bug_details(bug):
                         b['status'] = normalize_status(b.get('status'))
 
                 # Usuń buga na podstawie tytułu i środowiska
-                bugs = [b for b in bugs if not (b['title'] == bug['title'] and b['environment'] == bug['environment'])]
+                bugs = [b for b in bugs if not (
+                    b['title'] == bug['title'] and b['environment'] == bug['environment']
+                    and b.get('game_title', '') == bug.get('game_title', '')
+                )]
 
                 with open(BUGS_FILE, "w", encoding="utf-8") as f:
                     json.dump(bugs, f, indent=2, ensure_ascii=False)
@@ -592,61 +624,105 @@ def load_bugs():
         for widget in tab.winfo_children():
             widget.destroy()
 
-    if os.path.exists(BUGS_FILE):
-        try:
-            with open(BUGS_FILE, "r", encoding="utf-8") as f:
-                bugs = json.load(f)
-                # Normalize legacy status values to English
-                for b in bugs:
-                    b['status'] = normalize_status(b.get('status'))
+    def reset_game_filter_choices():
+        game_filter_combo['values'] = (GAME_FILTER_ALL,)
+        game_filter_var.set(GAME_FILTER_ALL)
 
-            if not bugs:
-                for tab in (tab_all, tab_in_progress, tab_done):
-                    empty_label = tk.Label(tab, text="No reported bugs", 
-                                         fg=COLORS['text_muted'], bg=COLORS['bg_secondary'],
-                                         font=STYLES['font_body'])
-                    empty_label.pack(pady=STYLES['padding_large'])
-                return
+    def apply_game_filter(all_bugs):
+        titles = set()
+        has_empty_title = False
+        for b in all_bugs:
+            gt = (b.get('game_title') or '').strip()
+            if gt:
+                titles.add(gt)
+            else:
+                has_empty_title = True
+        options = [GAME_FILTER_ALL] + sorted(titles)
+        if has_empty_title:
+            options.append(GAME_FILTER_NO_TITLE)
+        game_filter_combo['values'] = options
+        sel = game_filter_var.get()
+        if sel not in options:
+            game_filter_var.set(GAME_FILTER_ALL)
+            sel = GAME_FILTER_ALL
+        if sel == GAME_FILTER_ALL:
+            return all_bugs
+        if sel == GAME_FILTER_NO_TITLE:
+            return [b for b in all_bugs if not (b.get('game_title') or '').strip()]
+        return [b for b in all_bugs if (b.get('game_title') or '').strip() == sel]
 
-            # Funkcja pomocnicza do tworzenia karty buga
-            def create_bug_card(parent, bug):
-                frame = tk.Frame(parent, bg=COLORS['bg_tertiary'], relief='flat', 
-                               bd=STYLES['border_width'], highlightbackground=COLORS['border'],
-                               highlightthickness=STYLES['border_width'])
-                frame.pack(fill='x', padx=STYLES['padding_medium'], pady=STYLES['padding_small'])
+    def create_bug_card(parent, bug):
+        frame = tk.Frame(parent, bg=COLORS['bg_tertiary'], relief='flat',
+                         bd=STYLES['border_width'], highlightbackground=COLORS['border'],
+                         highlightthickness=STYLES['border_width'])
+        frame.pack(fill='x', padx=STYLES['padding_medium'], pady=STYLES['padding_small'])
 
-                title = tk.Label(frame, text=f"🐞 {bug['title']}", font=STYLES['font_subheading'], 
-                               anchor='w', cursor="hand2", wraplength=600, justify='left',
-                               bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'])
-                title.pack(fill='x', padx=STYLES['padding_medium'], pady=(STYLES['padding_small'], 0))
-                title.bind("<Button-1>", lambda e, b=bug: show_bug_details(b))
+        title = tk.Label(frame, text=f"🐞 {bug['title']}", font=STYLES['font_subheading'],
+                         anchor='w', cursor="hand2", wraplength=600, justify='left',
+                         bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'])
+        title.pack(fill='x', padx=STYLES['padding_medium'], pady=(STYLES['padding_small'], 0))
+        title.bind("<Button-1>", lambda e, b=bug: show_bug_details(b))
 
-                info = tk.Label(frame, text=f"Severity: {bug['severity']} | Status: {bug['status']}", 
-                              font=STYLES['font_small'], fg=COLORS['text_secondary'], anchor='w',
-                              bg=COLORS['bg_tertiary'])
-                info.pack(fill='x', padx=STYLES['padding_medium'], pady=(0, STYLES['padding_small']))
+        _gt = (bug.get('game_title') or '').strip()
+        if _gt:
+            game_line = tk.Label(frame, text=f"🎮 {_gt}", font=STYLES['font_small'],
+                                 anchor='w', cursor="hand2", wraplength=600, justify='left',
+                                 fg=COLORS['accent_green'], bg=COLORS['bg_tertiary'])
+            game_line.pack(fill='x', padx=STYLES['padding_medium'], pady=(0, 0))
+            game_line.bind("<Button-1>", lambda e, b=bug: show_bug_details(b))
 
-            # Rozdziel bugi do odpowiednich zakładek
-            for bug in bugs:
-                create_bug_card(tab_all, bug)
+        info = tk.Label(frame, text=f"Severity: {bug['severity']} | Status: {bug['status']}",
+                        font=STYLES['font_small'], fg=COLORS['text_secondary'], anchor='w',
+                        bg=COLORS['bg_tertiary'])
+        info.pack(fill='x', padx=STYLES['padding_medium'], pady=(0, STYLES['padding_small']))
 
-                if bug['status'] == "In Progress":
-                    create_bug_card(tab_in_progress, bug)
-                elif bug['status'] == "Completed":
-                    create_bug_card(tab_done, bug)
-
-        except Exception as e:
-            for tab in (tab_all, tab_in_progress, tab_done):
-                error_label = tk.Label(tab, text=f"Error while loading bugs: {e}", 
-                                     fg=COLORS['error'], bg=COLORS['bg_secondary'],
-                                     font=STYLES['font_body'])
-                error_label.pack(pady=STYLES['padding_large'])
-    else:
+    if not os.path.exists(BUGS_FILE):
+        reset_game_filter_choices()
         for tab in (tab_all, tab_in_progress, tab_done):
-            no_file_label = tk.Label(tab, text="No bug file found", 
+            no_file_label = tk.Label(tab, text="No bug file found",
+                                     fg=COLORS['text_muted'], bg=COLORS['bg_secondary'],
+                                     font=STYLES['font_body'])
+            no_file_label.pack(pady=STYLES['padding_large'])
+        return
+
+    try:
+        with open(BUGS_FILE, "r", encoding="utf-8") as f:
+            bugs = json.load(f)
+        for b in bugs:
+            b['status'] = normalize_status(b.get('status'))
+    except Exception as e:
+        reset_game_filter_choices()
+        for tab in (tab_all, tab_in_progress, tab_done):
+            error_label = tk.Label(tab, text=f"Error while loading bugs: {e}",
+                                   fg=COLORS['error'], bg=COLORS['bg_secondary'],
+                                   font=STYLES['font_body'])
+            error_label.pack(pady=STYLES['padding_large'])
+        return
+
+    filtered = apply_game_filter(bugs)
+
+    if not bugs:
+        for tab in (tab_all, tab_in_progress, tab_done):
+            empty_label = tk.Label(tab, text="No reported bugs",
                                    fg=COLORS['text_muted'], bg=COLORS['bg_secondary'],
                                    font=STYLES['font_body'])
-            no_file_label.pack(pady=STYLES['padding_large'])
+            empty_label.pack(pady=STYLES['padding_large'])
+        return
+
+    if not filtered:
+        for tab in (tab_all, tab_in_progress, tab_done):
+            empty_label = tk.Label(tab, text="No bugs match this game filter",
+                                   fg=COLORS['text_muted'], bg=COLORS['bg_secondary'],
+                                   font=STYLES['font_body'])
+            empty_label.pack(pady=STYLES['padding_large'])
+        return
+
+    for bug in filtered:
+        create_bug_card(tab_all, bug)
+        if bug['status'] == "In Progress":
+            create_bug_card(tab_in_progress, bug)
+        elif bug['status'] == "Completed":
+            create_bug_card(tab_done, bug)
 
 
 # ====== Przycisk dodawania nowego buga ======
@@ -691,7 +767,7 @@ def open_bug_form():
     
     # Informacja o minimalnych długościach
     length_info_label = tk.Label(scrollable_frame, 
-                                text="📏 Minimum lengths: Title (5), Environment (2), Steps (20), Expected/Actual (15), Notes (10)", 
+                                text="📏 Minimum lengths: Bug title (5), Game title (2), Environment fields (2), Steps (20), Expected/Actual (15), Notes (10)", 
                                 font=STYLES['font_small'], 
                                 fg=COLORS['text_muted'], 
                                 bg=COLORS['bg_primary'])
@@ -718,19 +794,20 @@ def open_bug_form():
 
     # Pola formularza
     fields['title'] = create_field("1. Bug title: *")
+    fields['game_title'] = create_field("2. Game title: *")
 
-    tk.Label(scrollable_frame, text="2. Environment: *", font=STYLES['font_subheading'], 
+    tk.Label(scrollable_frame, text="3. Environment: *", font=STYLES['font_subheading'], 
             anchor='w', bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(anchor='w', padx=STYLES['padding_large'], pady=(STYLES['padding_medium'], 0), fill='x')
     fields['game_version'] = create_field("Game version: *")
     fields['platform'] = create_field("Platform: *")
     fields['device'] = create_field("Device: *")
     fields['internet'] = create_field("Internet connection: *")
 
-    fields['steps'] = create_field("3. Steps to reproduce: *", is_multiline=True)
-    fields['expected'] = create_field("4. Expected result: *", is_multiline=True)
-    fields['actual'] = create_field("5. Actual result: *", is_multiline=True)
+    fields['steps'] = create_field("4. Steps to reproduce: *", is_multiline=True)
+    fields['expected'] = create_field("5. Expected result: *", is_multiline=True)
+    fields['actual'] = create_field("6. Actual result: *", is_multiline=True)
 
-    tk.Label(scrollable_frame, text="6. Bug severity: *", anchor='w', 
+    tk.Label(scrollable_frame, text="7. Bug severity: *", anchor='w', 
             bg=COLORS['bg_primary'], fg=COLORS['text_primary'], 
             font=STYLES['font_body']).pack(anchor='w', padx=STYLES['padding_large'], pady=(STYLES['padding_medium'], 0), fill='x')
     severity_var = tk.StringVar(value="Minor")
@@ -740,13 +817,13 @@ def open_bug_form():
     severity_dropdown.pack(padx=STYLES['padding_large'], fill='x')
     fields['severity'] = severity_var
 
-    fields['notes'] = create_field("7. Notes / Additional info (optional):", is_multiline=True)
+    fields['notes'] = create_field("8. Notes / Additional info (optional):", is_multiline=True)
 
     # === Sekcja zrzutów ekranu ===
     screenshots_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
     screenshots_frame.pack(fill='x', padx=STYLES['padding_large'], pady=STYLES['padding_medium'])
     
-    tk.Label(screenshots_frame, text="8. Screenshots (optional):", font=STYLES['font_subheading'], 
+    tk.Label(screenshots_frame, text="9. Screenshots (optional):", font=STYLES['font_subheading'], 
             anchor='w', bg=COLORS['bg_primary'], fg=COLORS['text_secondary']).pack(anchor='w', fill='x')
     
     # Lista wybranych screenshotsów
@@ -809,6 +886,7 @@ def open_bug_form():
         # Walidacja wymaganych pól
         required_fields = {
             'title': 'Bug title',
+            'game_title': 'Game title',
             'game_version': 'Game version',
             'platform': 'Platform',
             'device': 'Device',
@@ -841,6 +919,7 @@ def open_bug_form():
         # Walidacja długości pól tekstowych
         min_lengths = {
             'title': 5,
+            'game_title': 2,
             'game_version': 2,
             'platform': 2,
             'device': 2,
@@ -887,6 +966,7 @@ def open_bug_form():
         try:
             bug_data = {
                 "title": fields['title'].get().strip(),
+                "game_title": fields['game_title'].get().strip(),
                 "environment": (
                     f"Game version: {fields['game_version'].get().strip()}\n"
                     f"Platform: {fields['platform'].get().strip()}\n"
@@ -952,6 +1032,8 @@ add_bug_btn = tk.Button(root, text="➕ Add new bug", command=open_bug_form,
                        activebackground=COLORS['accent_green'],
                        activeforeground=COLORS['text_primary'])
 add_bug_btn.pack(pady=STYLES['padding_medium'])
+
+game_filter_combo.bind('<<ComboboxSelected>>', lambda _e: load_bugs())
 
 # ====== Uruchomienie ======
 load_bugs()
