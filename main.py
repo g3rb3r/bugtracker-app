@@ -3,6 +3,7 @@ from tkinter import ttk
 from tkinter import messagebox
 from tkinter import filedialog
 from PIL import Image, ImageTk
+from html import escape
 import json
 import os
 import shutil
@@ -68,6 +69,7 @@ MEDIA_FILE_TYPES = [
 ]
 GAME_FILTER_ALL = "All games"
 GAME_FILTER_NO_TITLE = "(No game title)"
+REPORTS_DIR = "reports"
 STATUS_MAP = {
     "W trakcie": "In Progress",
     "Zakończone": "Completed",
@@ -129,6 +131,12 @@ def copy_screenshot_to_folder(source_path, bug_title, index):
 def get_screenshot_path(filename):
     """Zwraca pełną ścieżkę do screenshotu"""
     return os.path.join(SCREENSHOTS_DIR, filename)
+
+
+def safe_filename(value):
+    allowed = {' ', '-', '_'}
+    sanitized = "".join(c for c in value if c.isalnum() or c in allowed).strip()
+    return sanitized.replace(" ", "_") or "report"
 
 def create_thumbnail(image_path, size=(100, 100)):
     """Tworzy miniaturę obrazu"""
@@ -206,11 +214,133 @@ def create_modern_button(parent, text, command, button_type='primary'):
                     activeforeground=COLORS['text_primary'],
                     cursor='hand2')
 
+
+def is_text_input_widget(widget):
+    if widget is None:
+        return False
+    return widget.winfo_class() in {"Entry", "TEntry", "Text", "TCombobox", "Spinbox"}
+
 # Konfiguracja głównego okna
 root = tk.Tk()
 root.title("Bug Tracker - Panel QA")
 root.geometry("1000x700")
 root.configure(bg=COLORS['bg_primary'])
+
+scroll_state = {"active_canvas": None}
+
+
+def register_scrollable_canvas(canvas):
+    def set_active(_event=None):
+        scroll_state["active_canvas"] = canvas
+
+    canvas.bind("<Enter>", set_active, add="+")
+    canvas.bind("<Button-1>", set_active, add="+")
+    return set_active
+
+
+def _scroll_units(delta):
+    active = scroll_state.get("active_canvas")
+    if active is None or not active.winfo_exists():
+        return
+    active.yview_scroll(delta, "units")
+
+
+def _on_global_mousewheel(event):
+    if event.delta:
+        units = -1 if event.delta > 0 else 1
+        _scroll_units(units)
+
+
+def _on_global_arrow_scroll(event):
+    if is_text_input_widget(event.widget):
+        return
+    key_to_units = {
+        "Up": -1,
+        "Down": 1,
+        "Prior": -8,
+        "Next": 8,
+    }
+    units = key_to_units.get(event.keysym)
+    if units:
+        _scroll_units(units)
+        return "break"
+
+
+def _select_all_in_widget(event):
+    widget = event.widget
+    if widget.winfo_class() in {"Entry", "TEntry"}:
+        widget.select_range(0, tk.END)
+        widget.icursor(tk.END)
+    elif widget.winfo_class() == "Text":
+        widget.tag_add("sel", "1.0", "end-1c")
+        widget.mark_set("insert", "end-1c")
+    return "break"
+
+
+def _move_entry_by_word(event, direction, select=False):
+    widget = event.widget
+    text = widget.get()
+    cursor = widget.index(tk.INSERT)
+
+    if direction < 0:
+        new_pos = cursor
+        while new_pos > 0 and text[new_pos - 1].isspace():
+            new_pos -= 1
+        while new_pos > 0 and not text[new_pos - 1].isspace():
+            new_pos -= 1
+    else:
+        new_pos = cursor
+        text_len = len(text)
+        while new_pos < text_len and text[new_pos].isspace():
+            new_pos += 1
+        while new_pos < text_len and not text[new_pos].isspace():
+            new_pos += 1
+
+    if select:
+        anchor = widget.index("anchor") if widget.selection_present() else cursor
+        widget.selection_range(min(anchor, new_pos), max(anchor, new_pos))
+    else:
+        widget.selection_clear()
+    widget.icursor(new_pos)
+    return "break"
+
+
+def _move_text_by_word(event, direction, select=False):
+    widget = event.widget
+    if direction < 0:
+        target = widget.index("insert -1c wordstart")
+    else:
+        target = widget.index("insert wordend +1c")
+
+    if select:
+        if not widget.tag_ranges("sel"):
+            widget.mark_set("anchor", "insert")
+        widget.tag_remove("sel", "1.0", tk.END)
+        widget.tag_add("sel", "anchor", target)
+    else:
+        widget.tag_remove("sel", "1.0", tk.END)
+    widget.mark_set("insert", target)
+    widget.see("insert")
+    return "break"
+
+
+root.bind_all("<MouseWheel>", _on_global_mousewheel, add="+")
+root.bind_all("<Button-4>", lambda _e: _scroll_units(-1), add="+")
+root.bind_all("<Button-5>", lambda _e: _scroll_units(1), add="+")
+for _key in ("<Up>", "<Down>", "<Prior>", "<Next>"):
+    root.bind_all(_key, _on_global_arrow_scroll, add="+")
+for _class_name in ("Entry", "TEntry", "Text"):
+    root.bind_class(_class_name, "<Control-a>", _select_all_in_widget, add="+")
+    root.bind_class(_class_name, "<Control-A>", _select_all_in_widget, add="+")
+for _class_name in ("Entry", "TEntry"):
+    root.bind_class(_class_name, "<Control-Left>", lambda e: _move_entry_by_word(e, -1), add="+")
+    root.bind_class(_class_name, "<Control-Right>", lambda e: _move_entry_by_word(e, 1), add="+")
+    root.bind_class(_class_name, "<Control-Shift-Left>", lambda e: _move_entry_by_word(e, -1, select=True), add="+")
+    root.bind_class(_class_name, "<Control-Shift-Right>", lambda e: _move_entry_by_word(e, 1, select=True), add="+")
+root.bind_class("Text", "<Control-Left>", lambda e: _move_text_by_word(e, -1), add="+")
+root.bind_class("Text", "<Control-Right>", lambda e: _move_text_by_word(e, 1), add="+")
+root.bind_class("Text", "<Control-Shift-Left>", lambda e: _move_text_by_word(e, -1, select=True), add="+")
+root.bind_class("Text", "<Control-Shift-Right>", lambda e: _move_text_by_word(e, 1, select=True), add="+")
 
 # Ustaw minimalny rozmiar okna
 root.minsize(800, 600)
@@ -281,6 +411,35 @@ notebook.add(tab_all, text="📋 All")
 notebook.add(tab_in_progress, text="🛠️ In Progress")
 notebook.add(tab_done, text="✅ Completed")
 
+
+def create_scrollable_tab(parent_tab):
+    """Creates a vertically scrollable content area inside a notebook tab."""
+    canvas = tk.Canvas(parent_tab, bg=COLORS['bg_secondary'], highlightthickness=0)
+    scrollbar = tk.Scrollbar(parent_tab, orient="vertical", command=canvas.yview)
+    content_frame = tk.Frame(canvas, bg=COLORS['bg_secondary'])
+
+    def on_content_configure(_event):
+        canvas.configure(scrollregion=canvas.bbox("all"))
+
+    def on_canvas_configure(event):
+        canvas.itemconfig(canvas_window, width=event.width)
+
+    content_frame.bind("<Configure>", on_content_configure)
+    canvas_window = canvas.create_window((0, 0), window=content_frame, anchor="nw")
+    canvas.configure(yscrollcommand=scrollbar.set)
+    canvas.bind("<Configure>", on_canvas_configure)
+
+    canvas.pack(side="left", fill="both", expand=True)
+    scrollbar.pack(side="right", fill="y")
+    set_active = register_scrollable_canvas(canvas)
+    content_frame.bind("<Enter>", set_active, add="+")
+    return content_frame
+
+
+tab_all_content = create_scrollable_tab(tab_all)
+tab_in_progress_content = create_scrollable_tab(tab_in_progress)
+tab_done_content = create_scrollable_tab(tab_done)
+
 # ====== Placeholder: lista bugów ======
 def show_bug_details(bug):
     detail_window = tk.Toplevel(root)
@@ -305,6 +464,8 @@ def show_bug_details(bug):
 
     canvas.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
+    set_active = register_scrollable_canvas(canvas)
+    scrollable_frame.bind("<Enter>", set_active, add="+")
 
     # Konfiguracja canvas aby rozszerzał się na całą szerokość
     def configure_canvas(event):
@@ -721,8 +882,9 @@ def show_bug_details(bug):
     delete_btn.pack(side='left', padx=STYLES['padding_small'])
 
 def load_bugs():
+    update_report_button_state()
     # Wyczyść wszystkie zakładki
-    for tab in (tab_all, tab_in_progress, tab_done):
+    for tab in (tab_all_content, tab_in_progress_content, tab_done_content):
         for widget in tab.winfo_children():
             widget.destroy()
 
@@ -780,7 +942,7 @@ def load_bugs():
 
     if not os.path.exists(BUGS_FILE):
         reset_game_filter_choices()
-        for tab in (tab_all, tab_in_progress, tab_done):
+        for tab in (tab_all_content, tab_in_progress_content, tab_done_content):
             no_file_label = tk.Label(tab, text="No bug file found",
                                      fg=COLORS['text_muted'], bg=COLORS['bg_secondary'],
                                      font=STYLES['font_body'])
@@ -794,7 +956,7 @@ def load_bugs():
             b['status'] = normalize_status(b.get('status'))
     except Exception as e:
         reset_game_filter_choices()
-        for tab in (tab_all, tab_in_progress, tab_done):
+        for tab in (tab_all_content, tab_in_progress_content, tab_done_content):
             error_label = tk.Label(tab, text=f"Error while loading bugs: {e}",
                                    fg=COLORS['error'], bg=COLORS['bg_secondary'],
                                    font=STYLES['font_body'])
@@ -804,7 +966,7 @@ def load_bugs():
     filtered = apply_game_filter(bugs)
 
     if not bugs:
-        for tab in (tab_all, tab_in_progress, tab_done):
+        for tab in (tab_all_content, tab_in_progress_content, tab_done_content):
             empty_label = tk.Label(tab, text="No reported bugs",
                                    fg=COLORS['text_muted'], bg=COLORS['bg_secondary'],
                                    font=STYLES['font_body'])
@@ -812,7 +974,7 @@ def load_bugs():
         return
 
     if not filtered:
-        for tab in (tab_all, tab_in_progress, tab_done):
+        for tab in (tab_all_content, tab_in_progress_content, tab_done_content):
             empty_label = tk.Label(tab, text="No bugs match this game filter",
                                    fg=COLORS['text_muted'], bg=COLORS['bg_secondary'],
                                    font=STYLES['font_body'])
@@ -820,11 +982,11 @@ def load_bugs():
         return
 
     for bug in filtered:
-        create_bug_card(tab_all, bug)
+        create_bug_card(tab_all_content, bug)
         if bug['status'] == "In Progress":
-            create_bug_card(tab_in_progress, bug)
+            create_bug_card(tab_in_progress_content, bug)
         elif bug['status'] == "Completed":
-            create_bug_card(tab_done, bug)
+            create_bug_card(tab_done_content, bug)
 
 
 # ====== Przycisk dodawania nowego buga ======
@@ -851,6 +1013,8 @@ def open_bug_form():
 
     canvas.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
+    set_active = register_scrollable_canvas(canvas)
+    scrollable_frame.bind("<Enter>", set_active, add="+")
 
     # Konfiguracja canvas aby rozszerzał się na całą szerokość
     def configure_canvas(event):
@@ -1125,16 +1289,161 @@ def open_bug_form():
     save_btn = create_modern_button(button_center_frame, "💾 Save bug", save_bug, 'success')
     save_btn.pack()
 
-add_bug_btn = tk.Button(root, text="➕ Add new bug", command=open_bug_form, 
-                       bg=COLORS['accent_blue'], fg=COLORS['text_primary'], 
-                       font=STYLES['font_body'], padx=STYLES['padding_medium'], 
-                       pady=STYLES['padding_small'], relief='flat', 
+def update_report_button_state():
+    selected_game = (game_filter_var.get() or "").strip()
+    if selected_game and selected_game not in {GAME_FILTER_ALL, GAME_FILTER_NO_TITLE}:
+        report_btn.config(state="normal", bg=COLORS['success'])
+    else:
+        report_btn.config(state="disabled", bg=COLORS['bg_tertiary'])
+
+
+def generate_game_report():
+    selected_game = (game_filter_var.get() or "").strip()
+    if not selected_game or selected_game in {GAME_FILTER_ALL, GAME_FILTER_NO_TITLE}:
+        messagebox.showinfo("Report", "Choose a specific game in the filter first.")
+        return
+
+    if not os.path.exists(BUGS_FILE):
+        messagebox.showerror("Report", "No bugs file found.")
+        return
+
+    try:
+        with open(BUGS_FILE, "r", encoding="utf-8") as f:
+            bugs = json.load(f)
+        for b in bugs:
+            b["status"] = normalize_status(b.get("status"))
+    except Exception as e:
+        messagebox.showerror("Report", f"Could not read bugs file: {e}")
+        return
+
+    game_bugs = [b for b in bugs if (b.get("game_title") or "").strip() == selected_game]
+    if not game_bugs:
+        messagebox.showinfo("Report", f"No bugs found for game: {selected_game}")
+        return
+
+    default_reports_dir = os.path.join(os.getcwd(), REPORTS_DIR)
+    os.makedirs(default_reports_dir, exist_ok=True)
+    target_dir = filedialog.askdirectory(
+        title="Choose folder for generated report",
+        initialdir=default_reports_dir
+    )
+    if not target_dir:
+        return
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    report_name = f"bug_report_{safe_filename(selected_game)}_{timestamp}"
+    report_dir = os.path.join(target_dir, report_name)
+    media_dir = os.path.join(report_dir, "media")
+    os.makedirs(media_dir, exist_ok=True)
+
+    def html_text(text):
+        return escape(text or "").replace("\n", "<br>")
+
+    bug_sections = []
+    total_attachments = 0
+    missing_attachments = []
+
+    for idx, bug in enumerate(game_bugs, start=1):
+        media_parts = []
+        for media_idx, filename in enumerate(bug.get("screenshots", []), start=1):
+            source_path = get_screenshot_path(filename)
+            if not os.path.exists(source_path):
+                missing_attachments.append(filename)
+                media_parts.append(f"<li>Missing file: {escape(filename)}</li>")
+                continue
+
+            ext = os.path.splitext(filename)[1].lower()
+            copied_name = f"bug{idx}_{media_idx}_{safe_filename(os.path.splitext(filename)[0])}{ext}"
+            destination_path = os.path.join(media_dir, copied_name)
+            shutil.copy2(source_path, destination_path)
+            total_attachments += 1
+            rel_path = f"media/{escape(copied_name)}"
+
+            if is_video_file(filename):
+                media_parts.append(
+                    f"<div class='media-item'><p>Video: {escape(filename)}</p>"
+                    f"<video controls preload='metadata' src='{rel_path}'></video></div>"
+                )
+            else:
+                media_parts.append(
+                    f"<div class='media-item'><p>Image: {escape(filename)}</p>"
+                    f"<a href='{rel_path}' target='_blank'>"
+                    f"<img src='{rel_path}' alt='{escape(filename)}'></a></div>"
+                )
+
+        attachments_html = "".join(media_parts) if media_parts else "<p>No attachments.</p>"
+        bug_sections.append(
+            "<section class='bug-card'>"
+            f"<h2>{idx}. {escape(bug.get('title', 'Untitled bug'))}</h2>"
+            f"<p><strong>Status:</strong> {escape(bug.get('status', 'In Progress'))} "
+            f"| <strong>Severity:</strong> {escape(bug.get('severity', 'n/a'))}</p>"
+            f"<p><strong>Environment:</strong><br>{html_text(bug.get('environment', ''))}</p>"
+            f"<p><strong>Steps to reproduce:</strong><br>{html_text(bug.get('steps', ''))}</p>"
+            f"<p><strong>Expected:</strong><br>{html_text(bug.get('expected', ''))}</p>"
+            f"<p><strong>Actual:</strong><br>{html_text(bug.get('actual', ''))}</p>"
+            f"<p><strong>Notes:</strong><br>{html_text(bug.get('notes', ''))}</p>"
+            f"<div><strong>Attachments:</strong>{attachments_html}</div>"
+            "</section>"
+        )
+
+    html_report = (
+        "<!doctype html><html><head><meta charset='utf-8'>"
+        f"<title>Bug Report - {escape(selected_game)}</title>"
+        "<style>"
+        "body{font-family:Segoe UI,Arial,sans-serif;background:#f4f6f8;color:#222;margin:0;padding:24px;}"
+        ".container{max-width:1100px;margin:0 auto;}"
+        ".header{background:#fff;padding:16px 20px;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.1);}"
+        ".bug-card{background:#fff;padding:16px 20px;border-radius:10px;margin-top:16px;"
+        "box-shadow:0 1px 3px rgba(0,0,0,.1);}"
+        "img{max-width:100%;max-height:300px;border:1px solid #d0d7de;border-radius:6px;}"
+        "video{max-width:100%;max-height:320px;border:1px solid #d0d7de;border-radius:6px;background:#000;}"
+        ".media-item{margin:10px 0;}"
+        "</style></head><body><div class='container'>"
+        "<div class='header'>"
+        f"<h1>Bug Report: {escape(selected_game)}</h1>"
+        f"<p><strong>Generated:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>"
+        f"<p><strong>Total bugs:</strong> {len(game_bugs)} | <strong>Attachments copied:</strong> {total_attachments}</p>"
+        "</div>"
+        f"{''.join(bug_sections)}"
+        "</div></body></html>"
+    )
+
+    index_path = os.path.join(report_dir, "index.html")
+    with open(index_path, "w", encoding="utf-8") as f:
+        f.write(html_report)
+
+    zip_path = shutil.make_archive(report_dir, "zip", report_dir)
+    info_text = (
+        f"Report generated.\n\nFolder:\n{report_dir}\n\nZIP:\n{zip_path}\n\n"
+        f"Bugs: {len(game_bugs)}\nAttachments copied: {total_attachments}"
+    )
+    if missing_attachments:
+        info_text += f"\nMissing attachments: {len(missing_attachments)}"
+    messagebox.showinfo("Report ready", info_text)
+
+
+actions_frame = tk.Frame(root, bg=COLORS['bg_primary'])
+actions_frame.pack(pady=STYLES['padding_medium'])
+
+add_bug_btn = tk.Button(actions_frame, text="➕ Add new bug", command=open_bug_form,
+                       bg=COLORS['accent_blue'], fg=COLORS['text_primary'],
+                       font=STYLES['font_body'], padx=STYLES['padding_medium'],
+                       pady=STYLES['padding_small'], relief='flat',
                        activebackground=COLORS['accent_green'],
                        activeforeground=COLORS['text_primary'])
-add_bug_btn.pack(pady=STYLES['padding_medium'])
+add_bug_btn.pack(side='left', padx=(0, STYLES['padding_small']))
 
-game_filter_combo.bind('<<ComboboxSelected>>', lambda _e: load_bugs())
+report_btn = tk.Button(actions_frame, text="🧾 Generate game report", command=generate_game_report,
+                      bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'],
+                      font=STYLES['font_body'], padx=STYLES['padding_medium'],
+                      pady=STYLES['padding_small'], relief='flat',
+                      activebackground=COLORS['success'],
+                      activeforeground=COLORS['text_primary'])
+report_btn.pack(side='left', padx=(STYLES['padding_small'], 0))
+
+game_filter_combo.bind('<<ComboboxSelected>>', lambda _e: (load_bugs(), update_report_button_state()))
 
 # ====== Uruchomienie ======
 load_bugs()
+update_report_button_state()
 root.mainloop()
