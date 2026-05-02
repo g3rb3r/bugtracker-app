@@ -1,6 +1,6 @@
 # 🎮 Bug Tracker - QA Panel
 
-An application for managing game bug reports, created for learning QA methodology.
+A desktop QA tool for tracking game bugs, attaching media evidence, and exporting shareable game reports.
 
 ## ✨ Features
 
@@ -10,29 +10,28 @@ An application for managing game bug reports, created for learning QA methodolog
 - **Edit existing bugs** with support for updating all fields
 - **Delete bugs** with confirmation
 
-### 📸 Screenshot Functionality
-- **Attach screenshots** to reports (optional)
+### 📎 Media Attachments
+- **Attach images and video** to reports (optional)
 - **Automatically save files** in the `screenshots/` folder
-- **Smart file naming**: `bug_title_1.png`, `bug_title_2.png`, etc.
-- **Thumbnail previews** in the bug details window
-- **Click-to-zoom screenshots** from thumbnails
-- **Multiple supported formats**: PNG, JPG, JPEG, GIF, BMP
+- **Thumbnail previews** for images in bug details
+- **Open/play attachments** directly from bug details
+- **Supported formats**: PNG, JPG, JPEG, GIF, BMP, WEBP, MP4, WEBM, MOV, MKV, AVI, WMV, M4V, MPEG, MPG
 
-### 🎬 Media and Report Export
-- **Attach screenshots and video** to bug reports
-- **Generate HTML+ZIP report** for a selected game from the main view
-- **Share report with developers** without installing this app
+### 🧾 Report Export
+- **Generate HTML + ZIP report** for the currently selected game
+- Report includes bug details and copied media files
+- Developers can open `index.html` in a browser (no app install required)
 
 ### 🎨 Responsive Interface
 - **Flexible windows** that adapt to screen size
 - **Intuitive design** with colorful buttons and icons
 - **Scrolling support** in long forms
 
-## 🚀 Installation and Run
+## 🚀 Installation & Run
 
 ### Requirements
-- Python 3.6+
-- PIL library (Pillow)
+- Python 3.9+
+- Pillow
 
 ### Install dependencies
 ```bash
@@ -73,46 +72,51 @@ bugtracker_app/
    - Expected and actual result
    - Bug severity
    - Notes
-3. **Optional**: Add screenshots by clicking **"📷 Add screenshot"**
+3. **Optional**: Add attachments by clicking **"📎 Add media"**
 4. Click **"💾 Save bug"**
 
 ### Browse and Edit Bugs
 1. Click a bug title from the list
 2. In the details window, you can:
    - **View** all report information
-   - **See screenshots** as thumbnails
-   - **Click a thumbnail** to enlarge a screenshot
+   - **See image thumbnails** and media items
+   - **Preview images** / **play videos**
    - **Click "✏️ Edit report"** to enable edit mode
    - **Change status** in edit mode
    - **Save changes** or **cancel editing**
 
-### Manage Screenshots
-- **Add**: Choose an image file in the form
+### Manage Attachments
+- **Add**: Choose image or video in the form
 - **Remove**: Click ❌ next to the file name
-- **Preview**: Click a thumbnail in the details window
-- **Auto naming**: Files are saved as `bug_title_1.png`, `bug_title_2.png`, etc.
+- **Preview/Open**: Use controls in the details window
+- **Auto naming**: Files are saved with safe names and original extensions
+
+### Generate a Game Report
+1. Select a specific game in **Filter by game**
+2. Click **"🧾 Generate game report"**
+3. Choose output folder
+4. Share generated ZIP with your developer
 
 ## 🔧 Configuration
 
-### Supported image formats
-- PNG (recommended)
-- JPG/JPEG
-- GIF
-- BMP
+### Stored Data
+- Bugs are stored in `bugs.json`
+- Generated media is stored in `screenshots/`
+- Generated exports are stored in `reports/`
 
-### Maximum thumbnail size
-- Default: 80x80 pixels
-- Preview: Automatically adjusted to screen size
+### Git Ignore Notes
+- `screenshots/` and `reports/` are gitignored by default
+- Keep only sample records in `bugs.json` for public demos
 
 ## 🐛 Troubleshooting
 
 ### Error: "Cannot display image"
-- Check whether the image file is not corrupted
-- Make sure the format is supported
+- Check that the image file is valid
+- Make sure the file format is supported
 
-### Screenshots are not visible
-- Check whether the `screenshots/` folder exists
-- Make sure files were copied correctly
+### Media are missing in report
+- Check if source files still exist in `screenshots/`
+- Regenerate report if files were moved
 
 ### Save error
 - Check write permissions in the application folder
@@ -125,6 +129,7 @@ Bugs are stored in `bugs.json` using JSON format:
 ```json
 {
   "title": "Bug title",
+  "game_title": "Game title",
   "environment": "Environment information",
   "steps": "Reproduction steps",
   "expected": "Expected result",
@@ -132,7 +137,7 @@ Bugs are stored in `bugs.json` using JSON format:
   "severity": "Severity",
   "notes": "Notes",
   "status": "Status",
-  "screenshots": ["file1.png", "file2.png"]
+  "screenshots": ["file1.png", "file2.mp4"]
 }
 ```
 
@@ -147,6 +152,6 @@ Bugs are stored in `bugs.json` using JSON format:
 ---
 
 **Author**: Maja Gebler  
-**Version**: 1.0  
-**Date**: 2024
+**Version**: 1.1  
+**Date**: 2026
 
