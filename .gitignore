@@ -14,3 +14,7 @@ screenshots/
 # OS / editor noise
 .DS_Store
 Thumbs.db
+
+# IDE workspace metadata
+.vs/
+assets/.vs/
