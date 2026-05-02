@@ -11,37 +11,37 @@ import subprocess
 import sys
 from datetime import datetime
 
-# ====== MOTYW ======
-# Kolory główne
+# ====== THEME ======
+# Main colors
 COLORS = {
-    # Tło główne
-    'bg_primary': '#1e1e1e',      # Ciemne tło główne
-    'bg_secondary': '#252526',    # Tło sekcji
-    'bg_tertiary': '#2d2d30',     # Tło elementów
+    # Main background
+    'bg_primary': '#1e1e1e',      # Dark primary background
+    'bg_secondary': '#252526',    # Section background
+    'bg_tertiary': '#2d2d30',     # Element background
     
-    # Akcenty
-    'accent_blue': '#007acc',     # Niebieski akcent (VS Code)
-    'accent_green': '#4ec9b0',    # Zielony akcent
-    'accent_orange': '#ce9178',   # Pomarańczowy akcent
-    'accent_red': '#f44747',      # Czerwony akcent
+    # Accents
+    'accent_blue': '#007acc',     # Blue accent (VS Code)
+    'accent_green': '#4ec9b0',    # Green accent
+    'accent_orange': '#ce9178',   # Orange accent
+    'accent_red': '#f44747',      # Red accent
     
-    # Tekst
-    'text_primary': '#cccccc',    # Główny tekst
-    'text_secondary': '#969696',  # Drugorzędny tekst
-    'text_muted': '#6a6a6a',      # Stłumiony tekst
+    # Text
+    'text_primary': '#cccccc',    # Primary text
+    'text_secondary': '#969696',  # Secondary text
+    'text_muted': '#6a6a6a',      # Muted text
     
-    # Ramki i obramowania
-    'border': '#3e3e42',          # Ramki
-    'border_hover': '#4e4e52',    # Ramki przy hover
+    # Borders
+    'border': '#3e3e42',          # Border
+    'border_hover': '#4e4e52',    # Border on hover
     
-    # Status
-    'success': '#4ec9b0',         # Sukces
-    'warning': '#ce9178',         # Ostrzeżenie
-    'error': '#f44747',           # Błąd
-    'info': '#007acc',            # Informacja
+    # Status colors
+    'success': '#4ec9b0',         # Success
+    'warning': '#ce9178',         # Warning
+    'error': '#f44747',           # Error
+    'info': '#007acc',            # Info
 }
 
-# Style dla różnych elementów
+# Styles for UI elements
 STYLES = {
     'font_heading': ('Segoe UI', 16, 'bold'),
     'font_subheading': ('Segoe UI', 12, 'bold'),
@@ -81,13 +81,13 @@ def normalize_status(status):
     """Converts legacy Polish statuses to English equivalents."""
     return STATUS_MAP.get(status, status or "In Progress")
 
-# Funkcje pomocnicze do obsługi załączników (obrazy + wideo)
+# Helper functions for attachments (images + video)
 def is_video_file(path):
     return os.path.splitext(path)[1].lower() in VIDEO_EXTENSIONS
 
 
 def open_attachment_external(abs_path):
-    """Otwiera plik w domyślnej aplikacji systemu (np. odtwarzacz wideo)."""
+    """Opens file in the system default app (e.g., video player)."""
     abs_path = os.path.normpath(os.path.abspath(abs_path))
     if not os.path.isfile(abs_path):
         messagebox.showerror("Error", "File not found.")
@@ -104,7 +104,7 @@ def open_attachment_external(abs_path):
 
 
 def get_attachment_filename(bug_title, index, source_path):
-    """Nazwa pliku w folderze screenshots — zachowuje rozszerzenie źródła (wideo/obraz)."""
+    """Filename inside screenshots folder; keeps source extension (video/image)."""
     safe_title = "".join(c for c in bug_title if c.isalnum() or c in (' ', '-', '_')).rstrip()
     safe_title = safe_title.replace(' ', '_') or "attachment"
     ext = os.path.splitext(source_path)[1].lower()
@@ -114,7 +114,7 @@ def get_attachment_filename(bug_title, index, source_path):
 
 
 def copy_screenshot_to_folder(source_path, bug_title, index):
-    """Kopiuje załącznik do folderu screenshots z unikalną nazwą."""
+    """Copies attachment to screenshots folder with a unique filename."""
     if not os.path.exists(SCREENSHOTS_DIR):
         os.makedirs(SCREENSHOTS_DIR)
 
@@ -129,7 +129,7 @@ def copy_screenshot_to_folder(source_path, bug_title, index):
         return None
 
 def get_screenshot_path(filename):
-    """Zwraca pełną ścieżkę do screenshotu"""
+    """Returns full path to screenshot/attachment."""
     return os.path.join(SCREENSHOTS_DIR, filename)
 
 
@@ -139,7 +139,7 @@ def safe_filename(value):
     return sanitized.replace(" ", "_") or "report"
 
 def create_thumbnail(image_path, size=(100, 100)):
-    """Tworzy miniaturę obrazu"""
+    """Creates image thumbnail."""
     try:
         with Image.open(image_path) as img:
             img.thumbnail(size, Image.Resampling.LANCZOS)
@@ -149,14 +149,14 @@ def create_thumbnail(image_path, size=(100, 100)):
         return None
 
 def show_image_preview(image_path):
-    """Pokazuje podgląd obrazu w nowym oknie"""
+    """Shows image preview in a new window."""
     try:
         with Image.open(image_path) as img:
-            # Dostosuj rozmiar obrazu do ekranu
+            # Fit image to the screen
             screen_width = root.winfo_screenwidth() - 100
             screen_height = root.winfo_screenheight() - 100
             
-            # Oblicz proporcje
+            # Calculate scaling ratio
             img_width, img_height = img.size
             ratio = min(screen_width / img_width, screen_height / img_height)
             
@@ -167,27 +167,27 @@ def show_image_preview(image_path):
             
             photo = ImageTk.PhotoImage(img)
             
-            # Utwórz okno podglądu
+            # Create preview window
             preview_window = tk.Toplevel()
             preview_window.title(f"Screenshot preview")
             preview_window.geometry(f"{img.size[0] + 20}x{img.size[1] + 40}")
             
-            # Wyśrodkuj okno
+            # Center window
             preview_window.update_idletasks()
             x = (preview_window.winfo_screenwidth() // 2) - (preview_window.winfo_width() // 2)
             y = (preview_window.winfo_screenheight() // 2) - (preview_window.winfo_height() // 2)
             preview_window.geometry(f"+{x}+{y}")
             
-            # Dodaj obraz
+            # Add image
             label = tk.Label(preview_window, image=photo)
             label.pack(padx=10, pady=10)
             
-            # Przycisk zamknięcia
+            # Close button
             close_button = tk.Button(preview_window, text="Close", command=preview_window.destroy,
                      bg="#f44336", fg="white", padx=10, pady=5)
             close_button.pack(pady=10)
             
-            # Zachowaj referencję do obrazu w przycisku
+            # Keep image reference
             close_button.photo = photo
             
     except Exception as e:
@@ -195,7 +195,7 @@ def show_image_preview(image_path):
         messagebox.showerror("Error", f"Unable to display image: {e}")
 
 def create_modern_button(parent, text, command, button_type='primary'):
-    """Tworzy przycisk z nowoczesnym wyglądem"""
+    """Creates a button with modern styling."""
     colors = {
         'primary': {'bg': COLORS['accent_blue'], 'active_bg': COLORS['accent_green']},
         'success': {'bg': COLORS['success'], 'active_bg': COLORS['accent_green']},
@@ -220,7 +220,7 @@ def is_text_input_widget(widget):
         return False
     return widget.winfo_class() in {"Entry", "TEntry", "Text", "TCombobox", "Spinbox"}
 
-# Konfiguracja głównego okna
+# Main window setup
 root = tk.Tk()
 root.title("Bug Tracker - Panel QA")
 root.geometry("1000x700")
@@ -342,10 +342,10 @@ root.bind_class("Text", "<Control-Right>", lambda e: _move_text_by_word(e, 1), a
 root.bind_class("Text", "<Control-Shift-Left>", lambda e: _move_text_by_word(e, -1, select=True), add="+")
 root.bind_class("Text", "<Control-Shift-Right>", lambda e: _move_text_by_word(e, 1, select=True), add="+")
 
-# Ustaw minimalny rozmiar okna
+# Set minimum window size
 root.minsize(800, 600)
 
-# ====== Nagłówek ======
+# ====== Header ======
 header_frame = tk.Frame(root, bg=COLORS['bg_primary'])
 header_frame.pack(fill='x', padx=STYLES['padding_large'], pady=STYLES['padding_medium'])
 
@@ -357,7 +357,7 @@ subtitle = tk.Label(header_frame, text="QA Panel - Bug Management", font=STYLES[
                    bg=COLORS['bg_primary'], fg=COLORS['text_secondary'])
 subtitle.pack(side='left', padx=(STYLES['padding_medium'], 0), pady=(5, 0))
 
-# ====== Filtr po tytule gry ======
+# ====== Game title filter ======
 game_filter_var = tk.StringVar(value=GAME_FILTER_ALL)
 filter_bar = tk.Frame(root, bg=COLORS['bg_primary'])
 filter_bar.pack(fill='x', padx=STYLES['padding_large'], pady=(0, STYLES['padding_small']))
@@ -368,15 +368,15 @@ tk.Label(filter_bar, text="Filter by game:", font=STYLES['font_body'],
 game_filter_combo = ttk.Combobox(filter_bar, textvariable=game_filter_var, state='readonly', width=48)
 game_filter_combo.pack(side='left', fill='x', expand=True)
 
-# ====== Zakładki (filtry statusów) ======
+# ====== Tabs (status filters) ======
 notebook_frame = tk.Frame(root, bg=COLORS['bg_primary'])
 notebook_frame.pack(fill='both', expand=True, padx=STYLES['padding_large'], pady=STYLES['padding_small'])
 
-# Konfiguracja stylu zakładek
+# Tab style setup
 style = ttk.Style()
-style.theme_use('clam')  # Motyw clam dla lepszej kontroli
+style.theme_use('clam')  # Clam theme for better styling control
 
-# Styl dla zakładek
+# Tab style
 style.configure('Custom.TNotebook', background=COLORS['bg_primary'], borderwidth=0)
 style.configure('Custom.TNotebook.Tab', 
                 background=COLORS['bg_secondary'],
@@ -402,7 +402,7 @@ game_filter_combo.configure(style='GameFilter.TCombobox')
 notebook = ttk.Notebook(notebook_frame, style='Custom.TNotebook')
 notebook.pack(expand=1, fill='both')
 
-# Tworzenie trzech zakładek
+# Create three tabs
 tab_all = tk.Frame(notebook, bg=COLORS['bg_secondary'])
 tab_in_progress = tk.Frame(notebook, bg=COLORS['bg_secondary'])
 tab_done = tk.Frame(notebook, bg=COLORS['bg_secondary'])
@@ -440,14 +440,14 @@ tab_all_content = create_scrollable_tab(tab_all)
 tab_in_progress_content = create_scrollable_tab(tab_in_progress)
 tab_done_content = create_scrollable_tab(tab_done)
 
-# ====== Placeholder: lista bugów ======
+# ====== Bug list view ======
 def show_bug_details(bug):
     detail_window = tk.Toplevel(root)
     detail_window.title(f"📋 Details - {bug['title']}")
     detail_window.geometry("700x800")
     detail_window.configure(bg=COLORS['bg_primary'])
 
-    # Tworzenie canvasu z przewijaniem
+    # Create scrollable canvas
     canvas = tk.Canvas(detail_window, bg=COLORS['bg_primary'], highlightthickness=0)
     scrollbar = tk.Scrollbar(detail_window, orient="vertical", command=canvas.yview)
     scrollable_frame = tk.Frame(canvas, bg=COLORS['bg_primary'])
@@ -467,14 +467,14 @@ def show_bug_details(bug):
     set_active = register_scrollable_canvas(canvas)
     scrollable_frame.bind("<Enter>", set_active, add="+")
 
-    # Konfiguracja canvas aby rozszerzał się na całą szerokość
+    # Keep canvas content stretched to full width
     def configure_canvas(event):
         canvas.itemconfig(canvas_window, width=event.width)
     
     canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
     canvas.bind('<Configure>', configure_canvas)
 
-    # === Informacje tylko do odczytu ===
+    # === Read-only information ===
     read_only_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
     read_only_frame.pack(fill='x', padx=STYLES['padding_large'], pady=STYLES['padding_medium'])
 
@@ -508,11 +508,11 @@ def show_bug_details(bug):
                         bg=COLORS['bg_primary'], fg=COLORS['text_primary'])
     env_label.pack(anchor='w', fill='x', pady=(STYLES['padding_small'], 0))
 
-    # === Pola edytowalne (domyślnie tylko do odczytu) ===
+    # === Editable fields (disabled by default) ===
     editable_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
     editable_frame.pack(fill='both', expand=True, padx=STYLES['padding_large'], pady=STYLES['padding_medium'])
 
-    # Kroki do odtworzenia
+    # Steps to reproduce
     tk.Label(editable_frame, text="Steps to reproduce:", font=STYLES['font_subheading'], 
             bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(anchor='w', pady=(STYLES['padding_medium'], STYLES['padding_small']), fill='x')
     steps_text = tk.Text(editable_frame, height=6, wrap='word', state='disabled',
@@ -524,7 +524,7 @@ def show_bug_details(bug):
     steps_text.insert(tk.END, bug['steps'])
     steps_text.config(state='disabled')
 
-    # Oczekiwany rezultat
+    # Expected result
     tk.Label(editable_frame, text="Expected result:", font=STYLES['font_subheading'], 
             bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(anchor='w', pady=(STYLES['padding_medium'], STYLES['padding_small']), fill='x')
     expected_text = tk.Text(editable_frame, height=4, wrap='word', state='disabled',
@@ -536,7 +536,7 @@ def show_bug_details(bug):
     expected_text.insert(tk.END, bug['expected'])
     expected_text.config(state='disabled')
 
-    # Faktyczny rezultat
+    # Actual result
     tk.Label(editable_frame, text="Actual result:", font=STYLES['font_subheading'], 
             bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(anchor='w', pady=(STYLES['padding_medium'], STYLES['padding_small']), fill='x')
     actual_text = tk.Text(editable_frame, height=6, wrap='word', state='disabled',
@@ -548,7 +548,7 @@ def show_bug_details(bug):
     actual_text.insert(tk.END, bug['actual'])
     actual_text.config(state='disabled')
 
-    # Notatki
+    # Notes
     tk.Label(editable_frame, text="Notes / Additional info:", font=STYLES['font_subheading'], 
             bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(anchor='w', pady=(STYLES['padding_medium'], STYLES['padding_small']), fill='x')
     notes_text = tk.Text(editable_frame, height=6, wrap='word', state='disabled',
@@ -560,7 +560,7 @@ def show_bug_details(bug):
     notes_text.insert(tk.END, bug['notes'])
     notes_text.config(state='disabled')
 
-    # === Zrzuty ekranu ===
+    # === Screenshots and video ===
     if 'screenshots' in bug and bug['screenshots']:
         screenshots_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
         screenshots_frame.pack(fill='x', padx=STYLES['padding_large'], pady=STYLES['padding_medium'])
@@ -568,7 +568,7 @@ def show_bug_details(bug):
         tk.Label(screenshots_frame, text="Screenshots & video:", font=STYLES['font_subheading'],
                 bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(anchor='w', fill='x')
         
-        # Kontener na miniatury
+        # Thumbnail/media container
         thumbnails_frame = tk.Frame(screenshots_frame, bg=COLORS['bg_primary'])
         thumbnails_frame.pack(fill='x', pady=STYLES['padding_small'])
         
@@ -614,22 +614,22 @@ def show_bug_details(bug):
                         tk.Label(thumb_container, text=f"#{i+1}", font=STYLES['font_small'],
                                  fg=COLORS['text_muted'], bg=COLORS['bg_tertiary']).pack()
             else:
-                # Jeśli plik nie istnieje, pokaż informację
+                # If attachment is missing, show warning
                 tk.Label(thumbnails_frame, text=f"❌ Missing file: {screenshot_filename}", 
                         fg=COLORS['error'], bg=COLORS['bg_primary'], 
                         font=STYLES['font_body']).pack(side='left', padx=5, pady=5)
 
-    # === Sekcja edycji zrzutów ekranu (tylko w trybie edycji) ===
+    # === Attachment edit section (edit mode only) ===
     edit_screenshots_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
     edit_screenshots_frame.pack(fill='x', padx=STYLES['padding_large'], pady=STYLES['padding_medium'])
     
-    # Nagłówek sekcji edycji zrzutów ekranu
+    # Attachment edit section header
     edit_screenshots_header = tk.Label(edit_screenshots_frame, text="Add screenshots or video:",
                                       font=STYLES['font_subheading'], anchor='w',
                                       bg=COLORS['bg_primary'], fg=COLORS['text_primary'])
     edit_screenshots_header.pack(anchor='w', fill='x')
     
-    # Lista wybranych nowych zrzutów ekranu
+    # Selected new attachments
     new_screenshots = []
     edit_screenshots_list_frame = tk.Frame(edit_screenshots_frame, bg=COLORS['bg_primary'])
     edit_screenshots_list_frame.pack(fill='x', pady=STYLES['padding_small'])
@@ -649,35 +649,35 @@ def show_bug_details(bug):
             update_edit_screenshots_display()
     
     def update_edit_screenshots_display():
-        # Wyczyść listę
+        # Clear list
         for widget in edit_screenshots_list_frame.winfo_children():
             widget.destroy()
         
-        # Pokaż wybrane nowe zrzuty ekranu
+        # Show selected new attachments
         for i, screenshot_path in enumerate(new_screenshots):
             screenshot_frame = tk.Frame(edit_screenshots_list_frame, relief="solid", bd=1,
                                       bg=COLORS['bg_tertiary'], highlightbackground=COLORS['border'])
             screenshot_frame.pack(fill='x', pady=2)
             
-            # Nazwa pliku
+            # File name
             filename = os.path.basename(screenshot_path)
             icon = "🎬" if is_video_file(screenshot_path) else "📷"
             tk.Label(screenshot_frame, text=f"{icon} {filename}", anchor='w',
                     bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'],
                     font=STYLES['font_body']).pack(side='left', padx=5, pady=2, fill='x', expand=True)
             
-            # Przycisk usuwania
+            # Remove button
             tk.Button(screenshot_frame, text="❌", command=lambda idx=i: remove_new_screenshot(idx),
                      bg=COLORS['error'], fg=COLORS['text_primary'], width=3,
                      relief='flat', font=STYLES['font_small']).pack(side='right', padx=5, pady=2)
         
-        # Aktualizuj label z liczbą zrzutów
+        # Update counter label
         if new_screenshots:
             new_screenshots_label.config(text=f"New: {len(new_screenshots)} file(s)")
         else:
             new_screenshots_label.config(text="")
     
-    # Przyciski do zarządzania nowymi zrzutami ekranu
+    # Buttons for managing new attachments
     edit_screenshots_buttons_frame = tk.Frame(edit_screenshots_frame, bg=COLORS['bg_primary'])
     edit_screenshots_buttons_frame.pack(fill='x', pady=STYLES['padding_small'])
     
@@ -685,17 +685,17 @@ def show_bug_details(bug):
         edit_screenshots_buttons_frame, "📎 Add media", add_new_screenshot, 'warning')
     edit_add_screenshot_btn.pack(side='left', padx=(0, STYLES['padding_medium']))
     
-    # Label do wyświetlania liczby nowych zrzutów
+    # Label showing number of new attachments
     new_screenshots_label = tk.Label(edit_screenshots_buttons_frame, text="", fg=COLORS['accent_blue'],
                                    bg=COLORS['bg_primary'], font=STYLES['font_body'])
     new_screenshots_label.pack(side='left', padx=(STYLES['padding_medium'], 0))
 
-    # Początkowo ukryj sekcję edycji zrzutów ekranu
+    # Hide attachment edit section initially
     edit_screenshots_header.pack_forget()
     edit_screenshots_buttons_frame.pack_forget()
     edit_screenshots_list_frame.pack_forget()
 
-    # === Zmiana statusu ===
+    # === Status change ===
     status_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
     status_frame.pack(pady=STYLES['padding_medium'], fill='x', padx=STYLES['padding_large'])
 
@@ -705,11 +705,11 @@ def show_bug_details(bug):
     status_dropdown = ttk.Combobox(status_frame, textvariable=status_var, values=["In Progress", "Completed"], state="disabled")
     status_dropdown.pack(side='left')
 
-    # === Przyciski ===
+    # === Action buttons ===
     buttons_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
     buttons_frame.pack(pady=STYLES['padding_medium'], fill='x', padx=STYLES['padding_large'])
     
-    # Kontener do wyśrodkowania przycisków
+    # Centering container for buttons
     buttons_center_frame = tk.Frame(buttons_frame, bg=COLORS['bg_primary'])
     buttons_center_frame.pack(expand=True)
 
@@ -718,7 +718,7 @@ def show_bug_details(bug):
     def toggle_edit_mode():
         nonlocal edit_mode
         if not edit_mode:
-            # Włącz tryb edycji
+            # Enable edit mode
             title_entry.config(state='normal')
             steps_text.config(state='normal')
             expected_text.config(state='normal')
@@ -728,14 +728,14 @@ def show_bug_details(bug):
             edit_button.config(text="❌ Cancel edit")
             edit_button.configure(bg=COLORS['error'], fg=COLORS['text_primary'])
             edit_mode = True
-            # Pokaż sekcję edycji zrzutów ekranu
+            # Show attachment edit section
             edit_screenshots_header.pack(fill='x')
             edit_screenshots_buttons_frame.pack(fill='x')
             edit_screenshots_list_frame.pack(fill='x')
-            # Pokaż przycisk zapisu
+            # Show save button
             save_button.pack(side='left', padx=STYLES['padding_small'])
         else:
-            # Wyłącz tryb edycji
+            # Disable edit mode
             title_entry.config(state='normal')
             title_entry.delete(0, tk.END)
             title_entry.insert(0, bug['title'])
@@ -748,16 +748,16 @@ def show_bug_details(bug):
             edit_button.config(text="✏️ Edit report")
             edit_button.configure(bg=COLORS['accent_blue'], fg=COLORS['text_primary'])
             edit_mode = False
-            # Ukryj sekcję edycji zrzutów ekranu
+            # Hide attachment edit section
             edit_screenshots_header.pack_forget()
             edit_screenshots_buttons_frame.pack_forget()
             edit_screenshots_list_frame.pack_forget()
-            # Wyczyść nowe zrzuty ekranu
+            # Clear new attachments
             new_screenshots.clear()
             update_edit_screenshots_display()
-            # Ukryj przycisk zapisu
+            # Hide save button
             save_button.pack_forget()
-            # Przywróć oryginalne wartości
+            # Restore original values
             steps_text.config(state='normal')
             steps_text.delete("1.0", tk.END)
             steps_text.insert(tk.END, bug['steps'])
@@ -774,7 +774,7 @@ def show_bug_details(bug):
             notes_text.delete("1.0", tk.END)
             notes_text.insert(tk.END, bug['notes'])
             notes_text.config(state='disabled')
-            # Przywróć oryginalny status
+            # Restore original status
             status_var.set(bug['status'])
 
     def save_changes():
@@ -787,12 +787,12 @@ def show_bug_details(bug):
                 messagebox.showerror("Validation error", "Bug title must be at least 5 characters.")
                 return
 
-            # Wczytaj wszystkie bugi
+            # Load all bugs
             with open(BUGS_FILE, "r", encoding="utf-8") as f:
                 bugs = json.load(f)
                 for b in bugs:
                     b['status'] = normalize_status(b.get('status'))
-            # Znajdź i zaktualizuj
+            # Find and update selected bug
             matched_bug = None
             for b in bugs:
                 if (b['title'] == bug['title'] and b['environment'] == bug['environment']
@@ -819,7 +819,7 @@ def show_bug_details(bug):
                 messagebox.showerror("Error", "Report not found in data file.")
                 return
 
-            # Zapisz ponownie
+            # Save file again
             with open(BUGS_FILE, "w", encoding="utf-8") as f:
                 json.dump(bugs, f, indent=2, ensure_ascii=False)
 
@@ -833,27 +833,27 @@ def show_bug_details(bug):
                 bug['screenshots'] = matched_bug['screenshots']
 
             detail_window.title(f"📋 Details - {bug['title']}")
-            print(f"✅ Zapisano zmiany: {bug['title']}")
+            print(f"✅ Changes saved: {bug['title']}")
             if new_screenshots:
                 print(f"📎 Added {len(new_screenshots)} new attachment(s)")
-            # Po zapisaniu wróć do trybu podglądu, nie zamykaj okna
+            # Return to read mode without closing window
             toggle_edit_mode()
-            load_bugs()  # odśwież listę bugów w głównym oknie
+            load_bugs()  # refresh bug list in the main window
         except Exception as e:
             print("❌ Error while saving changes:", e)
 
-    # Przycisk zapisu (początkowo ukryty)
+    # Save button (hidden initially)
     save_button = create_modern_button(buttons_center_frame, "💾 Save changes", save_changes, 'success')
 
-    # Przycisk edycji
+    # Edit button
     edit_button = create_modern_button(buttons_center_frame, "✏️ Edit report", toggle_edit_mode, 'primary')
     edit_button.pack(side='left', padx=STYLES['padding_small'])
 
-    # === Przycisk zamknięcia ===
+    # === Close button ===
     close_btn = create_modern_button(buttons_center_frame, "❌ Close view", detail_window.destroy, 'secondary')
     close_btn.pack(side='left', padx=STYLES['padding_small'])
 
-    # === Przycisk usuwania ===
+    # === Delete button ===
     def delete_bug():
         if messagebox.askyesno("Confirmation", "Are you sure you want to delete this bug?"):
             try:
@@ -862,7 +862,7 @@ def show_bug_details(bug):
                     for b in bugs:
                         b['status'] = normalize_status(b.get('status'))
 
-                # Usuń buga na podstawie tytułu i środowiska
+                # Delete bug by title, environment, and game title
                 bugs = [b for b in bugs if not (
                     b['title'] == bug['title'] and b['environment'] == bug['environment']
                     and b.get('game_title', '') == bug.get('game_title', '')
@@ -883,7 +883,7 @@ def show_bug_details(bug):
 
 def load_bugs():
     update_report_button_state()
-    # Wyczyść wszystkie zakładki
+    # Clear all tabs
     for tab in (tab_all_content, tab_in_progress_content, tab_done_content):
         for widget in tab.winfo_children():
             widget.destroy()
@@ -989,14 +989,14 @@ def load_bugs():
             create_bug_card(tab_done_content, bug)
 
 
-# ====== Przycisk dodawania nowego buga ======
+# ====== Add new bug button ======
 def open_bug_form():
     top = tk.Toplevel(root)
     top.title("Add new bug")
     top.geometry("700x800")
     top.configure(bg=COLORS['bg_primary'])
 
-    # Tworzenie canvasu z przewijaniem
+    # Create scrollable canvas
     canvas = tk.Canvas(top, bg=COLORS['bg_primary'], highlightthickness=0)
     scrollbar = tk.Scrollbar(top, orient="vertical", command=canvas.yview)
     scrollable_frame = tk.Frame(canvas, bg=COLORS['bg_primary'])
@@ -1016,14 +1016,14 @@ def open_bug_form():
     set_active = register_scrollable_canvas(canvas)
     scrollable_frame.bind("<Enter>", set_active, add="+")
 
-    # Konfiguracja canvas aby rozszerzał się na całą szerokość
+    # Keep canvas content stretched to full width
     def configure_canvas(event):
         canvas.itemconfig(canvas_window, width=event.width)
     
     canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
     canvas.bind('<Configure>', configure_canvas)
 
-    # Informacja o wymaganych polach
+    # Required-fields info
     info_label = tk.Label(scrollable_frame, 
                          text="* - Required fields | Fields without asterisk are optional", 
                          font=STYLES['font_small'], 
@@ -1031,7 +1031,7 @@ def open_bug_form():
                          bg=COLORS['bg_primary'])
     info_label.pack(anchor='w', padx=STYLES['padding_large'], pady=(STYLES['padding_medium'], 0))
     
-    # Informacja o minimalnych długościach
+    # Minimum length info
     length_info_label = tk.Label(scrollable_frame, 
                                 text="📏 Minimum lengths: Bug title (5), Game title (2), Environment fields (2), Steps (20), Expected/Actual (15), Notes (10)", 
                                 font=STYLES['font_small'], 
@@ -1058,7 +1058,7 @@ def open_bug_form():
         entry.pack(padx=STYLES['padding_large'], fill='x')
         return entry
 
-    # Pola formularza
+    # Form fields
     fields['title'] = create_field("1. Bug title: *")
     fields['game_title'] = create_field("2. Game title: *")
 
@@ -1085,14 +1085,14 @@ def open_bug_form():
 
     fields['notes'] = create_field("8. Notes / Additional info (optional):", is_multiline=True)
 
-    # === Sekcja zrzutów ekranu ===
+    # === Attachments section ===
     screenshots_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
     screenshots_frame.pack(fill='x', padx=STYLES['padding_large'], pady=STYLES['padding_medium'])
     
     tk.Label(screenshots_frame, text="9. Screenshots & video (optional):", font=STYLES['font_subheading'],
             anchor='w', bg=COLORS['bg_primary'], fg=COLORS['text_secondary']).pack(anchor='w', fill='x')
     
-    # Lista wybranych screenshotsów
+    # Selected attachments list
     selected_screenshots = []
     screenshots_list_frame = tk.Frame(screenshots_frame, bg=COLORS['bg_primary'])
     screenshots_list_frame.pack(fill='x', pady=STYLES['padding_small'])
@@ -1112,29 +1112,29 @@ def open_bug_form():
             update_screenshots_display()
     
     def update_screenshots_display():
-        # Wyczyść listę
+        # Clear list
         for widget in screenshots_list_frame.winfo_children():
             widget.destroy()
         
-        # Pokaż wybrane screenshotsy
+        # Show selected attachments
         for i, screenshot_path in enumerate(selected_screenshots):
             screenshot_frame = tk.Frame(screenshots_list_frame, relief="solid", bd=1, 
                                       bg=COLORS['bg_tertiary'], highlightbackground=COLORS['border'])
             screenshot_frame.pack(fill='x', pady=2)
             
-            # Nazwa pliku
+            # File name
             filename = os.path.basename(screenshot_path)
             icon = "🎬" if is_video_file(screenshot_path) else "📷"
             tk.Label(screenshot_frame, text=f"{icon} {filename}", anchor='w',
                     bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'],
                     font=STYLES['font_body']).pack(side='left', padx=5, pady=2, fill='x', expand=True)
             
-            # Przycisk usuwania
+            # Remove button
             tk.Button(screenshot_frame, text="❌", command=lambda idx=i: remove_screenshot(idx),
                      bg=COLORS['error'], fg=COLORS['text_primary'], width=3,
                      relief='flat', font=STYLES['font_small']).pack(side='right', padx=5, pady=2)
     
-    # Przyciski do zarządzania screenshotsami
+    # Attachment management buttons
     screenshots_buttons_frame = tk.Frame(screenshots_frame, bg=COLORS['bg_primary'])
     screenshots_buttons_frame.pack(fill='x', pady=STYLES['padding_small'])
     
@@ -1147,7 +1147,7 @@ def open_bug_form():
                 font=STYLES['font_body']).pack(side='left')
 
     def save_bug():
-        # Walidacja wymaganych pól
+        # Validate required fields
         required_fields = {
             'title': 'Bug title',
             'game_title': 'Game title',
@@ -1160,27 +1160,27 @@ def open_bug_form():
             'actual': 'Actual result'
         }
         
-        # Sprawdź czy wszystkie wymagane pola są wypełnione
+        # Check if required fields are filled
         missing_fields = []
         for field_key, field_name in required_fields.items():
             if field_key in ['steps', 'expected', 'actual', 'notes']:
-                # Dla pól tekstowych (Text widget)
+                # For multiline text fields (Text widget)
                 value = fields[field_key].get("1.0", tk.END).strip()
             else:
-                # Dla pól jednoliniowych (Entry widget)
+                # For single-line fields (Entry widget)
                 value = fields[field_key].get().strip()
             
             if not value:
                 missing_fields.append(field_name)
         
-        # Jeśli są puste pola, pokaż błąd i przerwij
+        # If fields are missing, show error and stop
         if missing_fields:
             error_message = "❌ Please fill in all required fields:\n\n"
             error_message += "\n".join(f"• {field}" for field in missing_fields)
             messagebox.showerror("Validation error", error_message)
             return
         
-        # Walidacja długości pól tekstowych
+        # Validate minimum lengths
         min_lengths = {
             'title': 5,
             'game_title': 2,
@@ -1191,10 +1191,10 @@ def open_bug_form():
             'steps': 20,
             'expected': 15,
             'actual': 15,
-            'notes': 10  # Minimum dla notatek (jeśli są wypełnione)
+            'notes': 10  # Notes minimum only if provided
         }
         
-        # Sprawdź czy pola środowiska nie są zbyt krótkie
+        # Check environment field lengths
         environment_fields = ['game_version', 'platform', 'device', 'internet']
         for field_key in environment_fields:
             value = fields[field_key].get().strip()
@@ -1202,7 +1202,7 @@ def open_bug_form():
                 messagebox.showerror("Validation error", f"❌ Field '{required_fields[field_key]}' must have at least 2 characters")
                 return
         
-        # Sprawdź czy wybrano ważność
+        # Check if severity is selected
         if not fields['severity'].get():
             messagebox.showerror("Validation error", "❌ Please select bug severity")
             return
@@ -1214,7 +1214,7 @@ def open_bug_form():
             else:
                 value = fields[field_key].get().strip()
             
-            # Dla notatek sprawdź długość tylko jeśli są wypełnione
+            # Validate notes length only when notes are provided
             if field_key == 'notes' and not value:
                 continue
                 
@@ -1246,40 +1246,40 @@ def open_bug_form():
                 "screenshots": []
             }
 
-            # Zapisz screenshotsy
+            # Save attachments
             bug_title = fields['title'].get()
             for i, screenshot_path in enumerate(selected_screenshots):
                 filename = copy_screenshot_to_folder(screenshot_path, bug_title, i + 1)
                 if filename:
                     bug_data["screenshots"].append(filename)
 
-            # Wczytaj istniejące bugi (jeśli plik istnieje)
+            # Load existing bugs (if file exists)
             if os.path.exists(BUGS_FILE):
                 with open(BUGS_FILE, "r", encoding="utf-8") as f:
                     bugs = json.load(f)
             else:
                 bugs = []
 
-            # Dodaj nowy bug
+            # Add new bug
             bugs.append(bug_data)
 
-            # Zapisz do pliku
+            # Save to file
             with open(BUGS_FILE, "w", encoding="utf-8") as f:
                 json.dump(bugs, f, indent=2, ensure_ascii=False)
 
-            # Informacja o sukcesie
+            # Success info
             print("✅ New bug saved:", bug_data)
             if bug_data["screenshots"]:
                 print(f"📎 Saved {len(bug_data['screenshots'])} attachment(s)")
 
-            # Zamknij formularz
+            # Close form
             load_bugs()
             top.destroy()
 
         except Exception as e:
             print("❌ Error while saving bug:", e)
 
-    # Kontener do wyśrodkowania przycisku
+    # Container to center the button
     button_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
     button_frame.pack(pady=STYLES['padding_large'], fill='x')
     
