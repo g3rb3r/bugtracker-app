@@ -18,6 +18,11 @@ An application for managing game bug reports, created for learning QA methodolog
 - **Click-to-zoom screenshots** from thumbnails
 - **Multiple supported formats**: PNG, JPG, JPEG, GIF, BMP
 
+### 🎬 Media and Report Export
+- **Attach screenshots and video** to bug reports
+- **Generate HTML+ZIP report** for a selected game from the main view
+- **Share report with developers** without installing this app
+
 ### 🎨 Responsive Interface
 - **Flexible windows** that adapt to screen size
 - **Intuitive design** with colorful buttons and icons
@@ -44,11 +49,18 @@ python main.py
 ```
 bugtracker_app/
 ├── main.py              # Main application file
-├── bugs.json            # Bug database
-├── screenshots/         # Folder for screenshots
+├── bugs.json            # Bug database (can contain sample records)
+├── screenshots/         # Local folder for generated attachments (gitignored)
+├── reports/             # Local folder for generated reports (gitignored)
 ├── assets/              # App assets
 └── README.md            # This file
 ```
+
+## 📦 Demo Data and Git Ignore
+
+- `bugs.json` may include **sample records** so users can quickly see how bugs look.
+- Generated folders `screenshots/` and `reports/` are listed in `.gitignore`.
+- Files inside those folders are **local only** and will not be pushed to GitHub (unless they were tracked before).
 
 ## 💡 How to Use
 

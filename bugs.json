@@ -1,1 +1,100 @@
-[]
+[
+  {
+    "title": "low visibility of hero options",
+    "game_title": "kotek-totek",
+    "environment": "Game version: 1.0\nPlatform: web\nDevice: thinkpad t470s\nInternet connection: wireless",
+    "steps": "open web app\nfind hero options on the bottom of the page\nopen dropdown menu",
+    "expected": "options are easy to read for an user",
+    "actual": "options are not easily visible due to low contrast of text and background",
+    "severity": "Cosmetic",
+    "notes": "after first open of the hamburger options aren't visible at all for few seconds",
+    "status": "In Progress",
+    "screenshots": [
+      "low_visibility_of_system_options_1.png"
+    ]
+  },
+  {
+    "title": "spinning icons are outside of frame",
+    "game_title": "kotek-totek",
+    "environment": "Game version: 1.0\nPlatform: web\nDevice: thinkpad t470s\nInternet connection: wireless",
+    "steps": "open web app\npress the button spin to see spin animation",
+    "expected": "icons are in their frame",
+    "actual": "icons are moved slightly below the top line of the frame causing them to being pushed below bottom frame line",
+    "severity": "Cosmetic",
+    "notes": "the bug appears to not happen in every session",
+    "status": "In Progress",
+    "screenshots": [
+      "spinning_icons_are_outside_of_frame_1.png"
+    ]
+  },
+  {
+    "title": "icons have wrongly implemented png background",
+    "game_title": "kotek-totek",
+    "environment": "Game version: 1.0\nPlatform: web\nDevice: thinkpad t470s\nInternet connection: wireless",
+    "steps": "open webpage\nlook at the casino icons",
+    "expected": "icons should be with the see-trough backgroun for better presentation",
+    "actual": "icons have checkered background commonly used for png images",
+    "severity": "Cosmetic",
+    "notes": "",
+    "status": "In Progress",
+    "screenshots": [
+      "icons_have_wrongly_implemented_png_background_1.png"
+    ]
+  },
+  {
+    "title": "weird sound while playing game",
+    "game_title": "kotek-totek",
+    "environment": "Game version: 1.0\nPlatform: web\nDevice: thinkpad t470s\nInternet connection: wireless",
+    "steps": "open web app\nplay spin button",
+    "expected": "game developer probably added music in the bacground that should be heard",
+    "actual": "game starts to make sounds of buzzing of some sort",
+    "severity": "Major",
+    "notes": "",
+    "status": "In Progress",
+    "screenshots": [
+      "weird_sound_while_playing_game_1.mp4"
+    ]
+  },
+  {
+    "title": "png background in the \"wygrana\" pop up",
+    "game_title": "kotek-totek",
+    "environment": "Game version: 1.0\nPlatform: web\nDevice: thinkpad t470s\nInternet connection: wireless",
+    "steps": "open web app\nklick spin button\nspin until winning",
+    "expected": "pop up with text \"wygrana\" should appear",
+    "actual": "pop up appears with two png recktangles spinning in the background",
+    "severity": "Cosmetic",
+    "notes": "",
+    "status": "In Progress",
+    "screenshots": [
+      "png_background_in_the_wygrana_pop_up_1.mp4"
+    ]
+  },
+  {
+    "title": "png backround for coins in \"mega wygrana\" pop up",
+    "game_title": "kotek-totek",
+    "environment": "Game version: 1.0\nPlatform: web\nDevice: thinkpad t470s\nInternet connection: wireless",
+    "steps": "open web app\nspin until getting \"mega wygrana\"",
+    "expected": "coins in the background would appear to highlight the win without png background",
+    "actual": "coins do appear but with the png background",
+    "severity": "Cosmetic",
+    "notes": "",
+    "status": "In Progress",
+    "screenshots": [
+      "png_backround_for_coins_in_mega_wygrana_pop_up_1.mp4"
+    ]
+  },
+  {
+    "title": "png background when acheiving a \"czerny kumulacja\" bonus",
+    "game_title": "kotek-totek",
+    "environment": "Game version: 1.0\nPlatform: web\nDevice: thinkpad t470s\nInternet connection: wireless",
+    "steps": "open web app\nspin until reaching \"czerny kumulacja\"",
+    "expected": "the spark will apear to inform user of reaching cummulation",
+    "actual": "the spark appears but with a png background",
+    "severity": "Cosmetic",
+    "notes": "",
+    "status": "In Progress",
+    "screenshots": [
+      "png_background_when_acheiving_a_czerny_kumulacja_bonus_1.mp4"
+    ]
+  }
+]

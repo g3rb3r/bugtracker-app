@@ -1,0 +1,16 @@
+# Python cache / virtual environments
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+
+# Generated app data (keep local)
+reports/
+screenshots/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
