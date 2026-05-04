@@ -125,7 +125,7 @@ def copy_screenshot_to_folder(source_path, bug_title, index):
         shutil.copy2(source_path, destination)
         return filename
     except Exception as e:
-        print(f"❌ Error while copying screenshot: {e}")
+        print(f"Error while copying screenshot: {e}")
         return None
 
 def get_screenshot_path(filename):
@@ -145,7 +145,7 @@ def create_thumbnail(image_path, size=(100, 100)):
             img.thumbnail(size, Image.Resampling.LANCZOS)
             return ImageTk.PhotoImage(img)
     except Exception as e:
-        print(f"❌ Error while creating thumbnail: {e}")
+        print(f"Error while creating thumbnail: {e}")
         return None
 
 def show_image_preview(image_path):
@@ -191,7 +191,7 @@ def show_image_preview(image_path):
             close_button.photo = photo
             
     except Exception as e:
-        print(f"❌ Error while showing preview: {e}")
+        print(f"Error while showing preview: {e}")
         messagebox.showerror("Error", f"Unable to display image: {e}")
 
 def create_modern_button(parent, text, command, button_type='primary'):
@@ -443,7 +443,7 @@ tab_done_content = create_scrollable_tab(tab_done)
 # ====== Bug list view ======
 def show_bug_details(bug):
     detail_window = tk.Toplevel(root)
-    detail_window.title(f"📋 Details - {bug['title']}")
+    detail_window.title(f"Details - {bug['title']}")
     detail_window.geometry("700x800")
     detail_window.configure(bg=COLORS['bg_primary'])
 
@@ -615,7 +615,7 @@ def show_bug_details(bug):
                                  fg=COLORS['text_muted'], bg=COLORS['bg_tertiary']).pack()
             else:
                 # If attachment is missing, show warning
-                tk.Label(thumbnails_frame, text=f"❌ Missing file: {screenshot_filename}", 
+                tk.Label(thumbnails_frame, text=f"Missing file: {screenshot_filename}", 
                         fg=COLORS['error'], bg=COLORS['bg_primary'], 
                         font=STYLES['font_body']).pack(side='left', padx=5, pady=5)
 
@@ -725,7 +725,7 @@ def show_bug_details(bug):
             actual_text.config(state='normal')
             notes_text.config(state='normal')
             status_dropdown.config(state="readonly")
-            edit_button.config(text="❌ Cancel edit")
+            edit_button.config(text="Cancel edit")
             edit_button.configure(bg=COLORS['error'], fg=COLORS['text_primary'])
             edit_mode = True
             # Show attachment edit section
@@ -745,7 +745,7 @@ def show_bug_details(bug):
             actual_text.config(state='disabled')
             notes_text.config(state='disabled')
             status_dropdown.config(state="disabled")
-            edit_button.config(text="✏️ Edit report")
+            edit_button.config(text="Edit report")
             edit_button.configure(bg=COLORS['accent_blue'], fg=COLORS['text_primary'])
             edit_mode = False
             # Hide attachment edit section
@@ -832,25 +832,25 @@ def show_bug_details(bug):
             if new_screenshots:
                 bug['screenshots'] = matched_bug['screenshots']
 
-            detail_window.title(f"📋 Details - {bug['title']}")
-            print(f"✅ Changes saved: {bug['title']}")
+            detail_window.title(f"Details - {bug['title']}")
+            print(f"Changes saved: {bug['title']}")
             if new_screenshots:
-                print(f"📎 Added {len(new_screenshots)} new attachment(s)")
+                print(f"Added {len(new_screenshots)} new attachment(s)")
             # Return to read mode without closing window
             toggle_edit_mode()
             load_bugs()  # refresh bug list in the main window
         except Exception as e:
-            print("❌ Error while saving changes:", e)
+            print("Error while saving changes:", e)
 
     # Save button (hidden initially)
-    save_button = create_modern_button(buttons_center_frame, "💾 Save changes", save_changes, 'success')
+    save_button = create_modern_button(buttons_center_frame, "Save changes", save_changes, 'success')
 
     # Edit button
-    edit_button = create_modern_button(buttons_center_frame, "✏️ Edit report", toggle_edit_mode, 'primary')
+    edit_button = create_modern_button(buttons_center_frame, "Edit report", toggle_edit_mode, 'primary')
     edit_button.pack(side='left', padx=STYLES['padding_small'])
 
     # === Close button ===
-    close_btn = create_modern_button(buttons_center_frame, "❌ Close view", detail_window.destroy, 'secondary')
+    close_btn = create_modern_button(buttons_center_frame, "Close view", detail_window.destroy, 'secondary')
     close_btn.pack(side='left', padx=STYLES['padding_small'])
 
     # === Delete button ===
@@ -871,14 +871,14 @@ def show_bug_details(bug):
                 with open(BUGS_FILE, "w", encoding="utf-8") as f:
                     json.dump(bugs, f, indent=2, ensure_ascii=False)
 
-                print(f"🗑️ Deleted bug: {bug['title']}")
+                print(f"Deleted bug: {bug['title']}")
                 detail_window.destroy()
                 load_bugs()
 
             except Exception as e:
-                print("❌ Error while deleting bug:", e)
+                print("Error while deleting bug:", e)
 
-    delete_btn = create_modern_button(buttons_center_frame, "🗑️ Delete bug", delete_bug, 'error')
+    delete_btn = create_modern_button(buttons_center_frame, "Delete bug", delete_bug, 'error')
     delete_btn.pack(side='left', padx=STYLES['padding_small'])
 
 def load_bugs():
@@ -921,7 +921,7 @@ def load_bugs():
                          highlightthickness=STYLES['border_width'])
         frame.pack(fill='x', padx=STYLES['padding_medium'], pady=STYLES['padding_small'])
 
-        title = tk.Label(frame, text=f"🐞 {bug['title']}", font=STYLES['font_subheading'],
+        title = tk.Label(frame, text=f"{bug['title']}", font=STYLES['font_subheading'],
                          anchor='w', cursor="hand2", wraplength=600, justify='left',
                          bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'])
         title.pack(fill='x', padx=STYLES['padding_medium'], pady=(STYLES['padding_small'], 0))
@@ -929,7 +929,7 @@ def load_bugs():
 
         _gt = (bug.get('game_title') or '').strip()
         if _gt:
-            game_line = tk.Label(frame, text=f"🎮 {_gt}", font=STYLES['font_small'],
+            game_line = tk.Label(frame, text=f"{_gt}", font=STYLES['font_small'],
                                  anchor='w', cursor="hand2", wraplength=600, justify='left',
                                  fg=COLORS['accent_green'], bg=COLORS['bg_tertiary'])
             game_line.pack(fill='x', padx=STYLES['padding_medium'], pady=(0, 0))
@@ -1033,7 +1033,7 @@ def open_bug_form():
     
     # Minimum length info
     length_info_label = tk.Label(scrollable_frame, 
-                                text="📏 Minimum lengths: Bug title (5), Game title (2), Environment fields (2), Steps (20), Expected/Actual (15), Notes (10)", 
+                                text="Minimum lengths: Bug title (5), Game title (2), Environment fields (2), Steps (20), Expected/Actual (15), Notes (10)", 
                                 font=STYLES['font_small'], 
                                 fg=COLORS['text_muted'], 
                                 bg=COLORS['bg_primary'])
@@ -1175,7 +1175,7 @@ def open_bug_form():
         
         # If fields are missing, show error and stop
         if missing_fields:
-            error_message = "❌ Please fill in all required fields:\n\n"
+            error_message = "Please fill in all required fields:\n\n"
             error_message += "\n".join(f"• {field}" for field in missing_fields)
             messagebox.showerror("Validation error", error_message)
             return
@@ -1199,12 +1199,12 @@ def open_bug_form():
         for field_key in environment_fields:
             value = fields[field_key].get().strip()
             if len(value) < 2:
-                messagebox.showerror("Validation error", f"❌ Field '{required_fields[field_key]}' must have at least 2 characters")
+                messagebox.showerror("Validation error", f"Field '{required_fields[field_key]}' must have at least 2 characters")
                 return
         
         # Check if severity is selected
         if not fields['severity'].get():
-            messagebox.showerror("Validation error", "❌ Please select bug severity")
+            messagebox.showerror("Validation error", "Please select bug severity")
             return
         
         short_fields = []
@@ -1222,7 +1222,7 @@ def open_bug_form():
                 short_fields.append(f"{required_fields.get(field_key, field_key)} (minimum {min_length} characters)")
         
         if short_fields:
-            error_message = "❌ Some fields are too short:\n\n"
+            error_message = "Some fields are too short:\n\n"
             error_message += "\n".join(f"• {field}" for field in short_fields)
             messagebox.showerror("Validation error", error_message)
             return
@@ -1268,7 +1268,7 @@ def open_bug_form():
                 json.dump(bugs, f, indent=2, ensure_ascii=False)
 
             # Success info
-            print("✅ New bug saved:", bug_data)
+            print("New bug saved:", bug_data)
             if bug_data["screenshots"]:
                 print(f"📎 Saved {len(bug_data['screenshots'])} attachment(s)")
 
@@ -1277,7 +1277,7 @@ def open_bug_form():
             top.destroy()
 
         except Exception as e:
-            print("❌ Error while saving bug:", e)
+            print("Error while saving bug:", e)
 
     # Container to center the button
     button_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
@@ -1286,7 +1286,7 @@ def open_bug_form():
     button_center_frame = tk.Frame(button_frame, bg=COLORS['bg_primary'])
     button_center_frame.pack(expand=True)
 
-    save_btn = create_modern_button(button_center_frame, "💾 Save bug", save_bug, 'success')
+    save_btn = create_modern_button(button_center_frame, "Save bug", save_bug, 'success')
     save_btn.pack()
 
 def update_report_button_state():
@@ -1425,7 +1425,7 @@ def generate_game_report():
 actions_frame = tk.Frame(root, bg=COLORS['bg_primary'])
 actions_frame.pack(pady=STYLES['padding_medium'])
 
-add_bug_btn = tk.Button(actions_frame, text="➕ Add new bug", command=open_bug_form,
+add_bug_btn = tk.Button(actions_frame, text="Add new bug", command=open_bug_form,
                        bg=COLORS['accent_blue'], fg=COLORS['text_primary'],
                        font=STYLES['font_body'], padx=STYLES['padding_medium'],
                        pady=STYLES['padding_small'], relief='flat',
@@ -1433,7 +1433,7 @@ add_bug_btn = tk.Button(actions_frame, text="➕ Add new bug", command=open_bug_
                        activeforeground=COLORS['text_primary'])
 add_bug_btn.pack(side='left', padx=(0, STYLES['padding_small']))
 
-report_btn = tk.Button(actions_frame, text="🧾 Generate game report", command=generate_game_report,
+report_btn = tk.Button(actions_frame, text="Generate game report", command=generate_game_report,
                       bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'],
                       font=STYLES['font_body'], padx=STYLES['padding_medium'],
                       pady=STYLES['padding_small'], relief='flat',
@@ -1443,7 +1443,7 @@ report_btn.pack(side='left', padx=(STYLES['padding_small'], 0))
 
 game_filter_combo.bind('<<ComboboxSelected>>', lambda _e: (load_bugs(), update_report_button_state()))
 
-# ====== Uruchomienie ======
+# ====== Starting up ======
 load_bugs()
 update_report_button_state()
 root.mainloop()
