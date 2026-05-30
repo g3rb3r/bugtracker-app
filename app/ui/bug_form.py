@@ -13,7 +13,7 @@ from app.constants import (
     SEVERITY_OPTIONS, ENV_FIELD_PREFIXES, STATUS_MAP,
 )
 from app.utils.text import normalize_status, normalized_game_title, safe_filename
-from app.utils.bugs import load_bugs_list, save_bugs_list, normalize_bugs_statuses, bugs_match
+from app.utils.bugs import get_game_prefill_data
 from app.screenshots.media import (
     is_video_file, copy_screenshot_to_folder, get_screenshot_path,
     open_attachment_external, create_thumbnail, show_image_preview,
@@ -32,27 +32,21 @@ def open_bug_form(app):
     scrollbar = tk.Scrollbar(top, orient="vertical", command=canvas.yview)
     scrollable_frame = tk.Frame(canvas, bg=COLORS['bg_primary'])
 
-    scrollable_frame.bind(
-        "<Configure>",
-        lambda e: canvas.configure(
-            scrollregion=canvas.bbox("all")
-        )
-    )
+    def on_frame_configure(_event):
+        canvas.configure(scrollregion=canvas.bbox("all"))
 
-    canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+    def on_canvas_configure(event):
+        canvas.itemconfig(canvas_window, width=event.width)
+
+    scrollable_frame.bind("<Configure>", on_frame_configure)
+    canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
     canvas.configure(yscrollcommand=scrollbar.set)
+    canvas.bind("<Configure>", on_canvas_configure)
 
     canvas.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
     set_active = app.scroll.register_canvas(canvas)
     scrollable_frame.bind("<Enter>", set_active, add="+")
-
-    # Keep canvas content stretched to full width
-    def configure_canvas(event):
-        canvas.itemconfig(canvas_window, width=event.width)
-    
-    canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-    canvas.bind('<Configure>', configure_canvas)
 
     # Required-fields info
     info_label = tk.Label(scrollable_frame, 
@@ -102,11 +96,14 @@ def open_bug_form(app):
 
     active_game = (app.game_filter_var.get() or "").strip()
     if active_game not in (GAME_FILTER_ALL, GAME_FILTER_NO_TITLE, ""):
-        prefill = get_game_prefill_data(app.paths.bugs_file, active_game)
-        fields['game_title'].insert(0, prefill["game_title"])
-        for env_key in ENV_FIELD_PREFIXES:
-            if prefill[env_key]:
-                fields[env_key].insert(0, prefill[env_key])
+        try:
+            prefill = get_game_prefill_data(app.paths.bugs_file, active_game)
+            fields['game_title'].insert(0, prefill["game_title"])
+            for env_key in ENV_FIELD_PREFIXES:
+                if prefill.get(env_key):
+                    fields[env_key].insert(0, prefill[env_key])
+        except Exception as e:
+            print(f"Could not prefill game fields: {e}")
 
     fields['steps'] = create_field("4. Steps to reproduce: *", is_multiline=True)
     fields['expected'] = create_field("5. Expected result: *", is_multiline=True)
@@ -341,3 +338,6 @@ def open_bug_form(app):
 
     save_btn = create_modern_button(button_center_frame, "Save bug", save_bug, 'success')
     save_btn.pack()
+
+    top.update_idletasks()
+    canvas.configure(scrollregion=canvas.bbox("all"))
