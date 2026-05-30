@@ -141,6 +141,18 @@ def open_bug_details(app, bug):
     actual_text.insert(tk.END, bug['actual'])
     actual_text.config(state='disabled')
 
+    # Root cause (if identified)
+    tk.Label(editable_frame, text="Root cause (if identified):", font=STYLES['font_subheading'],
+            bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(anchor='w', pady=(STYLES['padding_medium'], STYLES['padding_small']), fill='x')
+    root_cause_text = tk.Text(editable_frame, height=4, wrap='word', state='disabled',
+                             bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'],
+                             insertbackground=COLORS['text_primary'], relief='flat',
+                             font=STYLES['font_body'])
+    root_cause_text.pack(fill='x', pady=(0, STYLES['padding_medium']))
+    root_cause_text.config(state='normal')
+    root_cause_text.insert(tk.END, bug.get('root_cause', ''))
+    root_cause_text.config(state='disabled')
+
     # Notes
     tk.Label(editable_frame, text="Notes / Additional info:", font=STYLES['font_subheading'], 
             bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(anchor='w', pady=(STYLES['padding_medium'], STYLES['padding_small']), fill='x')
@@ -318,6 +330,7 @@ def open_bug_details(app, bug):
             steps_text.config(state='normal')
             expected_text.config(state='normal')
             actual_text.config(state='normal')
+            root_cause_text.config(state='normal')
             notes_text.config(state='normal')
             status_dropdown.config(state="readonly")
             severity_dropdown.config(state="readonly")
@@ -339,6 +352,7 @@ def open_bug_details(app, bug):
             steps_text.config(state='disabled')
             expected_text.config(state='disabled')
             actual_text.config(state='disabled')
+            root_cause_text.config(state='disabled')
             notes_text.config(state='disabled')
             status_dropdown.config(state="disabled")
             severity_dropdown.config(state="disabled")
@@ -367,6 +381,10 @@ def open_bug_details(app, bug):
             actual_text.delete("1.0", tk.END)
             actual_text.insert(tk.END, bug['actual'])
             actual_text.config(state='disabled')
+            root_cause_text.config(state='normal')
+            root_cause_text.delete("1.0", tk.END)
+            root_cause_text.insert(tk.END, bug.get('root_cause', ''))
+            root_cause_text.config(state='disabled')
             notes_text.config(state='normal')
             notes_text.delete("1.0", tk.END)
             notes_text.insert(tk.END, bug['notes'])
@@ -407,6 +425,7 @@ def open_bug_details(app, bug):
                     b['steps'] = steps_text.get("1.0", tk.END).strip()
                     b['expected'] = expected_text.get("1.0", tk.END).strip()
                     b['actual'] = actual_text.get("1.0", tk.END).strip()
+                    b['root_cause'] = root_cause_text.get("1.0", tk.END).strip()
                     b['notes'] = notes_text.get("1.0", tk.END).strip()
                     b['screenshots'] = filter_existing_screenshots(
                         app.paths.screenshots_dir,
@@ -440,6 +459,7 @@ def open_bug_details(app, bug):
             bug['steps'] = matched_bug['steps']
             bug['expected'] = matched_bug['expected']
             bug['actual'] = matched_bug['actual']
+            bug['root_cause'] = matched_bug.get('root_cause', '')
             bug['notes'] = matched_bug['notes']
             if new_screenshots:
                 bug['screenshots'] = matched_bug['screenshots']

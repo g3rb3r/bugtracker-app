@@ -119,13 +119,14 @@ def open_bug_form(app):
     severity_dropdown.pack(padx=STYLES['padding_large'], fill='x')
     fields['severity'] = severity_var
 
-    fields['notes'] = create_field("8. Notes / Additional info (optional):", is_multiline=True)
+    fields['root_cause'] = create_field("8. Root cause (if identified):", is_multiline=True)
+    fields['notes'] = create_field("9. Notes / Additional info (optional):", is_multiline=True)
 
     # === Attachments section ===
     screenshots_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
     screenshots_frame.pack(fill='x', padx=STYLES['padding_large'], pady=STYLES['padding_medium'])
     
-    tk.Label(screenshots_frame, text="9. Screenshots & video (optional):", font=STYLES['font_subheading'],
+    tk.Label(screenshots_frame, text="10. Screenshots & video (optional):", font=STYLES['font_subheading'],
             anchor='w', bg=COLORS['bg_primary'], fg=COLORS['text_secondary']).pack(anchor='w', fill='x')
     
     # Selected attachments list
@@ -199,7 +200,7 @@ def open_bug_form(app):
         # Check if required fields are filled
         missing_fields = []
         for field_key, field_name in required_fields.items():
-            if field_key in ['steps', 'expected', 'actual', 'notes']:
+            if field_key in ['steps', 'expected', 'actual', 'root_cause', 'notes']:
                 # For multiline text fields (Text widget)
                 value = fields[field_key].get("1.0", tk.END).strip()
             else:
@@ -245,7 +246,7 @@ def open_bug_form(app):
         
         short_fields = []
         for field_key, min_length in min_lengths.items():
-            if field_key in ['steps', 'expected', 'actual', 'notes']:
+            if field_key in ['steps', 'expected', 'actual', 'root_cause', 'notes']:
                 value = fields[field_key].get("1.0", tk.END).strip()
             else:
                 value = fields[field_key].get().strip()
@@ -277,6 +278,7 @@ def open_bug_form(app):
                 "expected": fields['expected'].get("1.0", tk.END).strip(),
                 "actual": fields['actual'].get("1.0", tk.END).strip(),
                 "severity": fields['severity'].get(),
+                "root_cause": fields['root_cause'].get("1.0", tk.END).strip(),
                 "notes": fields['notes'].get("1.0", tk.END).strip(),
                 "status": "In Progress",
                 "screenshots": []
