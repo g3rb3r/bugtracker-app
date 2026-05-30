@@ -1,0 +1,13 @@
+{
+  "data_directory": "data",
+  "bugs_filename": "bugs.json",
+  "screenshots_subdirectory": "screenshots",
+  "reports_subdirectory": "reports",
+  "window": {
+    "title": "Bug Tracker - Panel QA",
+    "width": 1000,
+    "height": 700,
+    "min_width": 800,
+    "min_height": 600
+  }
+}

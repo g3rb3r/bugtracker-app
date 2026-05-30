@@ -2,156 +2,76 @@
 
 A desktop QA tool for tracking game bugs, attaching media evidence, and exporting shareable game reports.
 
-## ✨ Features
+## For end users (no Python required)
 
-### Bug Management
-- **Add new bugs** using a complete form
-- **Browse bugs** in three categories: All, In Progress, Completed
-- **Edit existing bugs** with support for updating all fields
-- **Delete bugs** with confirmation
+1. Download the **`dist/BugTracker`** folder (after someone builds it with `build.bat`), or build it yourself once (see below).
+2. Double-click **`BugTracker.exe`** or **`start_bugtracker.bat`**.
+3. Your bugs and attachments are stored in the **`data/`** folder next to the executable.
+4. Edit **`config.json`** to change window size or the data folder location.
 
-### Media Attachments
-- **Attach images and video** to reports (optional)
-- **Automatically save files** in the `screenshots/` folder
-- **Thumbnail previews** for images in bug details
-- **Open/play attachments** directly from bug details
-- **Supported formats**: PNG, JPG, JPEG, GIF, BMP, WEBP, MP4, WEBM, MOV, MKV, AVI, WMV, M4V, MPEG, MPG
+## Project layout
 
-### Report Export
-- **Generate HTML + ZIP report** for the currently selected game
-- Report includes bug details and copied media files
-- Developers can open `index.html` in a browser (no app install required)
+```
+bugtracker-app/
+├── app/                    # Application source code
+│   ├── config.py           # Loads config.json and data paths
+│   ├── constants.py        # Theme, severities, file types
+│   ├── main.py             # Entry point
+│   ├── screenshots/        # Media copy, thumbnails, preview
+│   ├── utils/              # Bug file helpers, text parsing
+│   └── ui/                 # Tkinter windows and forms
+├── data/                   # Your bugs and attachments (not in git: screenshots/, reports/)
+│   ├── bugs.json
+│   ├── screenshots/
+│   └── reports/
+├── config.json             # User settings (paths, window size)
+├── config.default.json     # Shipped defaults (copied on first run if config.json is missing)
+├── main.py                 # Launcher: python main.py
+├── start_bugtracker.bat    # Windows launcher
+├── build.bat               # Build BugTracker.exe with PyInstaller
+└── requirements.txt
+```
 
-### Responsive Interface
-- **Flexible windows** that adapt to screen size
-- **Intuitive design** with colorful buttons and icons
-- **Scrolling support** in long forms
-
-## Installation & Run
+## Developers: run from source
 
 ### Requirements
 - Python 3.9+
 - Pillow
 
-### Install dependencies
 ```bash
-pip install Pillow
-```
-
-### Run the app
-```bash
+pip install -r requirements.txt
 python main.py
 ```
 
-## Project Structure
+## Build a standalone .exe (Windows)
 
-```
-bugtracker_app/
-├── main.py              # Main application file
-├── bugs.json            # Bug database (can contain sample records)
-├── screenshots/         # Local folder for generated attachments (gitignored)
-├── reports/             # Local folder for generated reports (gitignored)
-├── assets/              # App assets
-└── README.md            # This file
+```bat
+build.bat
 ```
 
-## Demo Data and Git Ignore
+Output: `dist\BugTracker\BugTracker.exe` — distribute the **entire `dist\BugTracker` folder** (exe + `config.json` + `data/`).
 
-- `bugs.json` may include **sample records** so users can quickly see how bugs look.
-- Generated folders `screenshots/` and `reports/` are listed in `.gitignore`.
-- Files inside those folders are **local only** and will not be pushed to GitHub (unless they were tracked before).
+## Configuration (`config.json`)
 
-## How to Use
+| Key | Description |
+|-----|-------------|
+| `data_directory` | Folder for bugs and media (default: `data`) |
+| `bugs_filename` | JSON database file name inside data folder |
+| `screenshots_subdirectory` | Attachments folder inside data |
+| `reports_subdirectory` | Default export folder inside data |
+| `window` | Title, size, and minimum size |
 
-### Add a New Bug
-1. Click **"+ Add new bug"**
-2. Fill in all required fields:
-   - Bug title
-   - Environment details (game version, platform, device, connection)
-   - Reproduction steps
-   - Expected and actual result
-   - Bug severity
-   - Notes
-3. **Optional**: Add attachments by clicking **"📎 Add media"**
-4. Click **"Save bug"**
+Paths are relative to the folder containing `config.json` (project root when developing, exe folder when distributed).
 
-### Browse and Edit Bugs
-1. Click a bug title from the list
-2. In the details window, you can:
-   - **View** all report information
-   - **See image thumbnails** and media items
-   - **Preview images** / **play videos**
-   - **Click "Edit report"** to enable edit mode
-   - **Change status** in edit mode
-   - **Save changes** or **cancel editing**
+## Features
 
-### Manage Attachments
-- **Add**: Choose image or video in the form
-- **Remove**: Click x next to the file name
-- **Preview/Open**: Use controls in the details window
-- **Auto naming**: Files are saved with safe names and original extensions
-
-### Generate a Game Report
-1. Select a specific game in **Filter by game**
-2. Click **"Generate game report"**
-3. Choose output folder
-4. Share generated ZIP with your developer
-
-## Configuration
-
-### Stored Data
-- Bugs are stored in `bugs.json`
-- Generated media is stored in `screenshots/`
-- Generated exports are stored in `reports/`
-
-### Git Ignore Notes
-- `screenshots/` and `reports/` are gitignored by default
-- Keep only sample records in `bugs.json` for public demos
-
-## Troubleshooting
-
-### Error: "Cannot display image"
-- Check that the image file is valid
-- Make sure the file format is supported
-
-### Media are missing in report
-- Check if source files still exist in `screenshots/`
-- Regenerate report if files were moved
-
-### Save error
-- Check write permissions in the application folder
-- Make sure `bugs.json` is not being used by another application
-
-## Data Format
-
-Bugs are stored in `bugs.json` using JSON format:
-
-```json
-{
-  "title": "Bug title",
-  "game_title": "Game title",
-  "environment": "Environment information",
-  "steps": "Reproduction steps",
-  "expected": "Expected result",
-  "actual": "Actual result",
-  "severity": "Severity",
-  "notes": "Notes",
-  "status": "Status",
-  "screenshots": ["file1.png", "file2.mp4"]
-}
-```
-
-## Planned Features
-
-- [ ] Export reports to PDF
-- [ ] Filter by severity
-- [ ] Search within bug content
-- [ ] Statistics and charts
-- [ ] Integration with bug tracking systems
+- Add, edit, and delete bugs with media attachments
+- Filter by game; status tabs: All, In Progress, Completed
+- HTML + ZIP game reports for developers
+- Severity levels: Cosmetic, Low, Minor, Medium, Major, High, Critical
 
 ---
 
 **Author**: Maja Gebler  
-**Version**: 1.1  
+**Version**: 2.0  
 **Date**: 2026
-

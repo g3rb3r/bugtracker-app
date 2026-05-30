@@ -1,24 +1,25 @@
-```bat
 @echo off
 cd /d "%~dp0"
 
-REM pythonw — no console window (like a typical windowed application)
-py -3w main.py 2>nul
-if %errorlevel% equ 0 goto :eof
+REM Prefer built executable (no Python install required)
+if exist "dist\BugTracker\BugTracker.exe" (
+  start "" "dist\BugTracker\BugTracker.exe"
+  goto :eof
+)
+if exist "BugTracker.exe" (
+  start "" "BugTracker.exe"
+  goto :eof
+)
 
-pythonw main.py 2>nul
-if %errorlevel% equ 0 goto :eof
-
-REM Fallback: with console, so any error is visible
-echo Failed to launch via pythonw. Trying python.exe...
+REM Development: run from source
 py -3 main.py 2>nul
 if %errorlevel% equ 0 goto :eof
 
-python main.py
-if %errorlevel% neq 0 (
-  echo.
-  echo Python not found or missing modules (e.g. Pillow).
-  echo Install Python from python.org and run: pip install Pillow
-  pause
-)
-```
+python main.py 2>nul
+if %errorlevel% equ 0 goto :eof
+
+echo.
+echo Could not start Bug Tracker.
+echo - To run from source: install Python 3.9+ and run: pip install -r requirements.txt
+echo - To build .exe: run build.bat
+pause

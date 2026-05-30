@@ -1,4 +1,4 @@
-# Python cache / virtual environments
+# Python
 __pycache__/
 *.py[cod]
 *.pyo
@@ -7,14 +7,25 @@ __pycache__/
 venv/
 env/
 
-# Generated app data (keep local)
-reports/
-screenshots/
+# Generated user data (keep data/bugs.json if you want sample bugs in git)
+data/screenshots/
+data/reports/
 
-# OS / editor noise
+# Legacy paths (pre-restructure)
+screenshots/
+reports/
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# OS / editor
 .DS_Store
 Thumbs.db
-
-# IDE workspace metadata
 .vs/
 assets/.vs/
+
+# One-off extraction scripts
+_extract_ui.py
+_extract_main_window.py
