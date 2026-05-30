@@ -286,11 +286,25 @@ def open_bug_form(app):
             }
 
             # Save attachments
-            bug_title = fields['title'].get()
+            bug_title = fields['title'].get().strip()
+            failed_attachments = []
             for i, screenshot_path in enumerate(selected_screenshots):
-                filename = copy_screenshot_to_folder(app.paths.screenshots_dir, screenshot_path, bug_title, i + 1)
+                filename = copy_screenshot_to_folder(
+                    app.paths.screenshots_dir, screenshot_path, bug_title, i + 1
+                )
                 if filename:
                     bug_data["screenshots"].append(filename)
+                else:
+                    failed_attachments.append(os.path.basename(screenshot_path))
+
+            if failed_attachments:
+                messagebox.showwarning(
+                    "Attachment not saved",
+                    "The bug was saved, but these files could not be copied to\n"
+                    f"{app.paths.screenshots_dir}:\n\n"
+                    + "\n".join(f"• {name}" for name in failed_attachments)
+                    + "\n\nAdd them again via Edit report.",
+                )
 
             # Load existing bugs (if file exists)
             if os.path.exists(app.paths.bugs_file):

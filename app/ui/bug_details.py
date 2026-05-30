@@ -15,7 +15,8 @@ from app.constants import (
 from app.utils.text import normalize_status, normalized_game_title, safe_filename
 from app.utils.bugs import load_bugs_list, save_bugs_list, normalize_bugs_statuses, bugs_match
 from app.screenshots.media import (
-    is_video_file, copy_screenshot_to_folder, get_screenshot_path,
+    is_video_file, copy_screenshot_to_folder, resolve_attachment_path,
+    filter_existing_screenshots,
     open_attachment_external, create_thumbnail, show_image_preview,
 )
 from app.ui.theme import create_modern_button
@@ -165,8 +166,10 @@ def open_bug_details(app, bug):
         thumbnails_frame.pack(fill='x', pady=STYLES['padding_small'])
         
         for i, screenshot_filename in enumerate(bug['screenshots']):
-            screenshot_path = get_screenshot_path(app.paths.screenshots_dir, screenshot_filename)
-            if os.path.exists(screenshot_path):
+            screenshot_path = resolve_attachment_path(
+                app.paths.screenshots_dir, app.paths.install_root, screenshot_filename
+            )
+            if screenshot_path and os.path.exists(screenshot_path):
                 thumb_container = tk.Frame(thumbnails_frame, relief="solid", bd=1,
                                              bg=COLORS['bg_tertiary'], highlightbackground=COLORS['border'])
                 thumb_container.pack(side='left', padx=5, pady=5)
@@ -391,7 +394,7 @@ def open_bug_details(app, bug):
             with open(app.paths.bugs_file, "r", encoding="utf-8") as f:
                 bugs = json.load(f)
                 for b in bugs:
-                    b['status'] = normalize_status(b.get('status', STATUS_MAP))
+                    b['status'] = normalize_status(b.get('status'), STATUS_MAP)
             # Find and update selected bug
             matched_bug = None
             for b in bugs:
@@ -405,14 +408,21 @@ def open_bug_details(app, bug):
                     b['expected'] = expected_text.get("1.0", tk.END).strip()
                     b['actual'] = actual_text.get("1.0", tk.END).strip()
                     b['notes'] = notes_text.get("1.0", tk.END).strip()
+                    b['screenshots'] = filter_existing_screenshots(
+                        app.paths.screenshots_dir,
+                        app.paths.install_root,
+                        b.get('screenshots', []),
+                    )
                     if new_screenshots:
                         existing_count = len(b.get('screenshots', []))
                         for i, screenshot_path in enumerate(new_screenshots):
-                            filename = copy_screenshot_to_folder(app.paths.screenshots_dir,
-                                screenshot_path, new_title, existing_count + i + 1)
+                            filename = copy_screenshot_to_folder(
+                                app.paths.screenshots_dir,
+                                screenshot_path,
+                                new_title,
+                                existing_count + i + 1,
+                            )
                             if filename:
-                                if 'screenshots' not in b:
-                                    b['screenshots'] = []
                                 b['screenshots'].append(filename)
                     break
 
@@ -462,7 +472,7 @@ def open_bug_details(app, bug):
                 with open(app.paths.bugs_file, "r", encoding="utf-8") as f:
                     bugs = json.load(f)
                     for b in bugs:
-                        b['status'] = normalize_status(b.get('status', STATUS_MAP))
+                        b['status'] = normalize_status(b.get('status'), STATUS_MAP)
 
                 # Delete bug by title, environment, and game title
                 bugs = [b for b in bugs if not (

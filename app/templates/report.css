@@ -1,0 +1,166 @@
+/* Bug Tracker — game report styles (screen + print / PDF) */
+:root {
+  --bg: #f4f6f8;
+  --card: #ffffff;
+  --text: #1a1a1a;
+  --muted: #5c5c5c;
+  --border: #d0d7de;
+  --accent: #007acc;
+  --severity-high: #c42b1c;
+  --severity-medium: #ca5010;
+  --severity-low: #107c10;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  margin: 0;
+  padding: 24px;
+  line-height: 1.5;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.report-header {
+  background: var(--card);
+  padding: 20px 24px;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border-left: 4px solid var(--accent);
+}
+
+.report-header h1 {
+  margin: 0 0 8px;
+  font-size: 1.75rem;
+}
+
+.report-meta {
+  color: var(--muted);
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.report-actions {
+  margin-top: 16px;
+}
+
+.report-actions button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.report-actions button:hover {
+  filter: brightness(1.1);
+}
+
+.bug-card {
+  background: var(--card);
+  padding: 18px 22px;
+  border-radius: 10px;
+  margin-top: 18px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  page-break-inside: avoid;
+}
+
+.bug-card h2 {
+  margin: 0 0 10px;
+  font-size: 1.2rem;
+}
+
+.bug-badges {
+  margin-bottom: 12px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-right: 8px;
+  background: #e8e8e8;
+}
+
+.badge-status {
+  background: #deecf9;
+  color: #004578;
+}
+
+.bug-field {
+  margin: 10px 0;
+}
+
+.bug-field strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.bug-field .content {
+  white-space: pre-wrap;
+}
+
+.media-item {
+  margin: 12px 0;
+}
+
+.media-item img {
+  display: block;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  max-height: 480px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-top: 8px;
+}
+
+.media-hint {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.media-item video {
+  max-width: 100%;
+  max-height: 320px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #000;
+}
+
+.missing-media {
+  color: var(--severity-high);
+  font-style: italic;
+}
+
+@media print {
+  body {
+    background: #fff;
+    padding: 12px;
+  }
+
+  .report-actions {
+    display: none;
+  }
+
+  .bug-card {
+    box-shadow: none;
+    border: 1px solid var(--border);
+  }
+}

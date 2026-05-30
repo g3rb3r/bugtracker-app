@@ -67,7 +67,9 @@ Paths are relative to the folder containing `config.json` (project root when dev
 
 - Add, edit, and delete bugs with media attachments
 - Filter by game; status tabs: All, In Progress, Completed
-- HTML + ZIP game reports for developers
+- HTML + ZIP game reports (templates in `app/templates/`)
+- Automatic **PDF** export (`report.pdf`) via Microsoft Edge on Windows, or `xhtml2pdf` as fallback
+- **Print / Save as PDF** button in the HTML report (`index.html`)
 - Severity levels: Cosmetic, Low, Minor, Medium, Major, High, Critical
 
 ---

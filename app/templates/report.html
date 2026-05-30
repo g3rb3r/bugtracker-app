@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bug Report — {{game_title}}</title>
+  <link rel="stylesheet" href="report.css">
+</head>
+<body>
+  <div class="container">
+    <header class="report-header">
+      <h1>Bug Report: {{game_title}}</h1>
+      <p class="report-meta">
+        <strong>Generated:</strong> {{generated_at}}<br>
+        <strong>Total bugs:</strong> {{total_bugs}} &nbsp;|&nbsp;
+        <strong>Attachments copied:</strong> {{total_attachments}}
+      </p>
+      <div class="report-actions">
+        <button type="button" onclick="window.print()">Print / Save as PDF</button>
+      </div>
+    </header>
+    {{bug_sections}}
+  </div>
+</body>
+</html>

@@ -12,6 +12,7 @@ py -3 -m PyInstaller --noconfirm --windowed --name BugTracker ^
   --hidden-import=PIL._tkinter_finder ^
   --collect-submodules app ^
   --add-data "config.default.json;." ^
+  --add-data "app\templates;app\templates" ^
   main.py
 
 if %errorlevel% neq 0 (
