@@ -166,72 +166,116 @@ def open_bug_details(app, bug):
     notes_text.config(state='disabled')
 
     # === Screenshots and video ===
-    if 'screenshots' in bug and bug['screenshots']:
-        screenshots_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
-        screenshots_frame.pack(fill='x', padx=STYLES['padding_large'], pady=STYLES['padding_medium'])
-        
-        tk.Label(screenshots_frame, text="Screenshots & video:", font=STYLES['font_subheading'],
-                bg=COLORS['bg_primary'], fg=COLORS['text_primary']).pack(anchor='w', fill='x')
-        
-        # Thumbnail/media container
-        thumbnails_frame = tk.Frame(screenshots_frame, bg=COLORS['bg_primary'])
-        thumbnails_frame.pack(fill='x', pady=STYLES['padding_small'])
-        
-        for i, screenshot_filename in enumerate(bug['screenshots']):
+    attachment_filenames = list(bug.get("screenshots", []))
+    screenshots_frame = tk.Frame(scrollable_frame, bg=COLORS["bg_primary"])
+    screenshots_frame.pack(fill="x", padx=STYLES["padding_large"], pady=STYLES["padding_medium"])
+
+    tk.Label(
+        screenshots_frame, text="Screenshots & video:", font=STYLES["font_subheading"],
+        bg=COLORS["bg_primary"], fg=COLORS["text_primary"],
+    ).pack(anchor="w", fill="x")
+
+    thumbnails_frame = tk.Frame(screenshots_frame, bg=COLORS["bg_primary"])
+    thumbnails_frame.pack(fill="x", pady=STYLES["padding_small"])
+
+    edit_mode = False
+
+    def remove_existing_attachment(filename):
+        if filename in attachment_filenames:
+            attachment_filenames.remove(filename)
+            refresh_existing_attachments_display()
+
+    def refresh_existing_attachments_display():
+        for widget in thumbnails_frame.winfo_children():
+            widget.destroy()
+        if not attachment_filenames:
+            tk.Label(
+                thumbnails_frame, text="No attachments",
+                fg=COLORS["text_muted"], bg=COLORS["bg_primary"], font=STYLES["font_body"],
+            ).pack(anchor="w", padx=5, pady=5)
+            return
+        for i, screenshot_filename in enumerate(attachment_filenames):
             screenshot_path = resolve_attachment_path(
                 app.paths.screenshots_dir, app.paths.install_root, screenshot_filename
             )
-            if screenshot_path and os.path.exists(screenshot_path):
-                thumb_container = tk.Frame(thumbnails_frame, relief="solid", bd=1,
-                                             bg=COLORS['bg_tertiary'], highlightbackground=COLORS['border'])
-                thumb_container.pack(side='left', padx=5, pady=5)
+            thumb_container = tk.Frame(
+                thumbnails_frame, relief="solid", bd=1,
+                bg=COLORS["bg_tertiary"], highlightbackground=COLORS["border"],
+            )
+            thumb_container.pack(side="left", padx=5, pady=5)
 
+            if screenshot_path and os.path.exists(screenshot_path):
                 if is_video_file(screenshot_path):
-                    tk.Label(thumb_container, text="🎬", font=('Segoe UI', 28),
-                             bg=COLORS['bg_tertiary'], fg=COLORS['text_primary']).pack(padx=5, pady=(5, 0))
+                    tk.Label(
+                        thumb_container, text="🎬", font=("Segoe UI", 28),
+                        bg=COLORS["bg_tertiary"], fg=COLORS["text_primary"],
+                    ).pack(padx=5, pady=(5, 0))
                     short_name = screenshot_filename
                     if len(short_name) > 18:
                         short_name = short_name[:15] + "…"
-                    tk.Label(thumb_container, text=short_name, font=STYLES['font_small'],
-                             fg=COLORS['text_muted'], bg=COLORS['bg_tertiary'], wraplength=90).pack()
-                    play_btn = tk.Button(thumb_container, text="Play", cursor="hand2",
-                                         bg=COLORS['accent_blue'], fg=COLORS['text_primary'],
-                                         font=STYLES['font_small'], relief='flat',
-                                         command=lambda p=screenshot_path: open_attachment_external(p))
-                    play_btn.pack(padx=4, pady=4)
-                    tk.Label(thumb_container, text=f"#{i+1}", font=STYLES['font_small'],
-                             fg=COLORS['text_muted'], bg=COLORS['bg_tertiary']).pack()
+                    tk.Label(
+                        thumb_container, text=short_name, font=STYLES["font_small"],
+                        fg=COLORS["text_muted"], bg=COLORS["bg_tertiary"], wraplength=90,
+                    ).pack()
+                    tk.Button(
+                        thumb_container, text="Play", cursor="hand2",
+                        bg=COLORS["accent_blue"], fg=COLORS["text_primary"],
+                        font=STYLES["font_small"], relief="flat",
+                        command=lambda p=screenshot_path: open_attachment_external(p),
+                    ).pack(padx=4, pady=4)
                 else:
                     thumbnail = create_thumbnail(screenshot_path, (80, 80))
                     if thumbnail:
-                        thumb_label = tk.Label(thumb_container, image=thumbnail, cursor="hand2",
-                                               bg=COLORS['bg_tertiary'])
+                        thumb_label = tk.Label(
+                            thumb_container, image=thumbnail, cursor="hand2", bg=COLORS["bg_tertiary"],
+                        )
                         thumb_label.image = thumbnail
                         thumb_label.pack(padx=5, pady=5)
-                        thumb_label.bind("<Button-1>", lambda e, path=screenshot_path: show_image_preview(path))
-                        tk.Label(thumb_container, text=f"#{i+1}", font=STYLES['font_small'],
-                                 fg=COLORS['text_muted'], bg=COLORS['bg_tertiary']).pack()
+                        thumb_label.bind(
+                            "<Button-1>", lambda e, path=screenshot_path: show_image_preview(path)
+                        )
                     else:
-                        tk.Label(thumb_container, text="📎", font=('Segoe UI', 24),
-                                 bg=COLORS['bg_tertiary'], fg=COLORS['text_secondary']).pack(padx=5, pady=5)
-                        tk.Button(thumb_container, text="Open", cursor="hand2",
-                                  bg=COLORS['bg_tertiary'], fg=COLORS['text_primary'],
-                                  font=STYLES['font_small'], relief='flat',
-                                  command=lambda p=screenshot_path: open_attachment_external(p)).pack(padx=4, pady=4)
-                        tk.Label(thumb_container, text=f"#{i+1}", font=STYLES['font_small'],
-                                 fg=COLORS['text_muted'], bg=COLORS['bg_tertiary']).pack()
+                        tk.Label(
+                            thumb_container, text="📎", font=("Segoe UI", 24),
+                            bg=COLORS["bg_tertiary"], fg=COLORS["text_secondary"],
+                        ).pack(padx=5, pady=5)
+                        tk.Button(
+                            thumb_container, text="Open", cursor="hand2",
+                            bg=COLORS["bg_tertiary"], fg=COLORS["text_primary"],
+                            font=STYLES["font_small"], relief="flat",
+                            command=lambda p=screenshot_path: open_attachment_external(p),
+                        ).pack(padx=4, pady=4)
             else:
-                # If attachment is missing, show warning
-                tk.Label(thumbnails_frame, text=f"Missing file: {screenshot_filename}", 
-                        fg=COLORS['error'], bg=COLORS['bg_primary'], 
-                        font=STYLES['font_body']).pack(side='left', padx=5, pady=5)
+                tk.Label(
+                    thumb_container, text="Missing", font=STYLES["font_small"],
+                    fg=COLORS["error"], bg=COLORS["bg_tertiary"],
+                ).pack(padx=5, pady=5)
+                tk.Label(
+                    thumb_container, text=screenshot_filename, font=STYLES["font_small"],
+                    fg=COLORS["text_muted"], bg=COLORS["bg_tertiary"], wraplength=90,
+                ).pack()
+
+            tk.Label(
+                thumb_container, text=f"#{i + 1}", font=STYLES["font_small"],
+                fg=COLORS["text_muted"], bg=COLORS["bg_tertiary"],
+            ).pack()
+
+            if edit_mode:
+                tk.Button(
+                    thumb_container, text="Remove", cursor="hand2",
+                    bg=COLORS["error"], fg=COLORS["text_primary"],
+                    font=STYLES["font_small"], relief="flat",
+                    command=lambda fn=screenshot_filename: remove_existing_attachment(fn),
+                ).pack(padx=4, pady=(0, 4))
+
+    refresh_existing_attachments_display()
 
     # === Attachment edit section (edit mode only) ===
     edit_screenshots_frame = tk.Frame(scrollable_frame, bg=COLORS['bg_primary'])
     edit_screenshots_frame.pack(fill='x', padx=STYLES['padding_large'], pady=STYLES['padding_medium'])
     
     # Attachment edit section header
-    edit_screenshots_header = tk.Label(edit_screenshots_frame, text="Add screenshots or video:",
+    edit_screenshots_header = tk.Label(edit_screenshots_frame, text="Add more screenshots or video:",
                                       font=STYLES['font_subheading'], anchor='w',
                                       bg=COLORS['bg_primary'], fg=COLORS['text_primary'])
     edit_screenshots_header.pack(anchor='w', fill='x')
@@ -320,8 +364,6 @@ def open_bug_details(app, bug):
     buttons_center_frame = tk.Frame(buttons_frame, bg=COLORS['bg_primary'])
     buttons_center_frame.pack(expand=True)
 
-    edit_mode = False
-
     def toggle_edit_mode():
         nonlocal edit_mode
         if not edit_mode:
@@ -337,6 +379,7 @@ def open_bug_details(app, bug):
             edit_button.config(text="Cancel edit")
             edit_button.configure(bg=COLORS['error'], fg=COLORS['text_primary'])
             edit_mode = True
+            refresh_existing_attachments_display()
             # Show attachment edit section
             edit_screenshots_header.pack(fill='x')
             edit_screenshots_buttons_frame.pack(fill='x')
@@ -392,6 +435,8 @@ def open_bug_details(app, bug):
             # Restore original status and severity
             status_var.set(bug['status'])
             severity_var.set(bug.get('severity') or 'Minor')
+            attachment_filenames[:] = list(bug.get("screenshots", []))
+            refresh_existing_attachments_display()
 
     def save_changes():
         try:
@@ -427,11 +472,7 @@ def open_bug_details(app, bug):
                     b['actual'] = actual_text.get("1.0", tk.END).strip()
                     b['root_cause'] = root_cause_text.get("1.0", tk.END).strip()
                     b['notes'] = notes_text.get("1.0", tk.END).strip()
-                    b['screenshots'] = filter_existing_screenshots(
-                        app.paths.screenshots_dir,
-                        app.paths.install_root,
-                        b.get('screenshots', []),
-                    )
+                    b['screenshots'] = list(attachment_filenames)
                     if new_screenshots:
                         existing_count = len(b.get('screenshots', []))
                         for i, screenshot_path in enumerate(new_screenshots):
@@ -461,8 +502,9 @@ def open_bug_details(app, bug):
             bug['actual'] = matched_bug['actual']
             bug['root_cause'] = matched_bug.get('root_cause', '')
             bug['notes'] = matched_bug['notes']
-            if new_screenshots:
-                bug['screenshots'] = matched_bug['screenshots']
+            bug['screenshots'] = list(matched_bug.get('screenshots', []))
+            attachment_filenames[:] = bug['screenshots']
+            refresh_existing_attachments_display()
 
             detail_window.title(f"Details - {bug['title']}")
             print(f"Changes saved: {bug['title']}")
